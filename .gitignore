@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+data/
+!fixtures/data/
+apps/board/e2e/__screenshots__/
+test-results/
+playwright-report/
+.DS_Store
+Thumbs.db

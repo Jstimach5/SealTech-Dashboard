@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/domain" },
+    { "path": "fixtures" },
+    { "path": "apps/service" },
+    { "path": "apps/board" }
+  ]
+}

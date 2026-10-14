@@ -1,0 +1,19 @@
+{
+  "name": "@sealtech/service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "once": "tsx src/index.ts --once",
+    "build": "tsc -b",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@sealtech/domain": "0.1.0",
+    "zod": "3.24.1"
+  },
+  "devDependencies": {
+    "tsx": "4.19.2"
+  }
+}
