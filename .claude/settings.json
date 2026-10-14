@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Read", "Edit", "Write", "Glob", "Grep",
+      "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)",
+      "Bash(git add:*)", "Bash(git commit:*)", "Bash(git branch:*)", "Bash(git checkout:*)",
+      "Bash(git push:*)",
+      "Bash(uv venv:*)", "Bash(uv pip install:*)", "Bash(pip install:*)",
+      "Bash(python:*)", "Bash(python3:*)", "Bash(pytest:*)",
+      "Bash(sqlite3:*)", "Bash(ls:*)", "Bash(tail:*)",
+      "mcp__Jobber__get_*", "mcp__Jobber__search_*"
+    ],
+    "ask": [
+      "Bash(*.exe*)", "Bash(*.msi*)", "Bash(winget:*)", "Bash(choco:*)",
+      "Bash(nssm:*)", "Bash(sc:*)", "Bash(sc.exe:*)", "Bash(schtasks:*)", "Bash(powercfg:*)",
+      "Bash(ollama:*)", "Bash(tailscale:*)", "Bash(curl:*)", "Bash(wget:*)",
+      "Bash(rm -rf:*)", "Bash(Remove-Item:*)",
+      "mcp__Jobber__create_*", "mcp__Jobber__update_*",
+      "mcp__Microsoft_365__*", "mcp__Gmail__*"
+    ],
+    "deny": [
+      "Read(./.env)", "Edit(./.env)", "Write(./.env)",
+      "Bash(cat .env*)", "Bash(type .env*)", "Bash(Get-Content .env*)",
+      "Bash(printenv:*)", "Bash(env)"
+    ]
+  }
+}
