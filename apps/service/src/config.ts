@@ -11,12 +11,15 @@ import { fileURLToPath } from 'node:url';
 
 export type DataSource = 'fixtures' | 'live';
 
+/** Loopback only unless HOST says otherwise: every client today is the board PC itself. */
+export const DEFAULT_HOST = '127.0.0.1';
+
 export interface ServiceConfig {
   /** BOARD_DATA_SOURCE: fixtures (TESTVILLE) or live (Jobber + sheets; needs the developer app, M8). */
   dataSource: DataSource;
   /** FIXTURE_SCENARIO: a key of fixtures/scenarios.ts. */
   fixtureScenario: string;
-  /** FIXTURE_NOW: a frozen board clock (ISO instant). Unset = the real clock. */
+  /** FIXTURE_NOW: a frozen board clock, normalised to a UTC `...Z` instant (`toISOString`). Unset = the real clock. */
   fixtureNow?: string;
   /** JOBBER_WRITES=on lets queued note writes drain (fixture mode: simulated). */
   jobberWrites: boolean;
@@ -25,6 +28,8 @@ export interface ServiceConfig {
   /** DATA_DIR: board.db, snapshot.json and the fixture roster live here. */
   dataDir: string;
   port: number;
+  /** HOST: the address the HTTP server binds. Default 127.0.0.1 (the board PC is the only client). */
+  host: string;
   /** BOARD_DIST: the built board (apps/board/dist) served at `/`. */
   boardDist: string;
   /** ALERT_TO: email-to-SMS address for the single no-ACK alert (decision 41). */
@@ -94,14 +99,18 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   const dataSource = get('BOARD_DATA_SOURCE') ?? 'fixtures';
   if (dataSource !== 'fixtures' && dataSource !== 'live') throw new Error(`BOARD_DATA_SOURCE must be "fixtures" or "live" (got "${dataSource}")`);
 
-  const fixtureNow = get('FIXTURE_NOW');
-  if (fixtureNow !== undefined && Number.isNaN(new Date(fixtureNow).getTime())) throw new Error('FIXTURE_NOW must be an ISO-8601 instant (or blank for the real clock)');
+  const fixtureNowRaw = get('FIXTURE_NOW');
+  if (fixtureNowRaw !== undefined && Number.isNaN(new Date(fixtureNowRaw).getTime())) throw new Error('FIXTURE_NOW must be an ISO-8601 instant (or blank for the real clock)');
+  // Every stored and compared instant is a UTC `...Z` string; an offset form would break string comparisons.
+  const fixtureNow = fixtureNowRaw !== undefined ? new Date(fixtureNowRaw).toISOString() : undefined;
 
   const writes = get('JOBBER_WRITES') ?? 'off';
   if (writes !== 'on' && writes !== 'off') throw new Error(`JOBBER_WRITES must be "on" or "off" (got "${writes}")`);
 
   const port = Number(get('PORT') ?? '8787');
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('PORT must be an integer 0–65535');
+
+  const host = get('HOST') ?? DEFAULT_HOST;
 
   const alertTo = get('ALERT_TO');
   const boardDist = get('BOARD_DIST');
@@ -114,6 +123,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     rosterPath: resolve(cwd, get('ROSTER_PATH') ?? './data/roster.json'),
     dataDir: resolve(cwd, get('DATA_DIR') ?? './data'),
     port,
+    host,
     boardDist: boardDist !== undefined ? resolve(cwd, boardDist) : resolve(SERVICE_ROOT, '../board/dist'),
     ...(alertTo !== undefined ? { alertTo } : {}),
     tz: get('TZ') ?? 'America/Detroit',
@@ -130,6 +140,7 @@ export function describeConfig(c: ServiceConfig): string {
     `writes=${c.jobberWrites ? 'on' : 'off'}`,
     `build=${c.build}`,
     `data=${c.dataDir}`,
+    `host=${c.host}`,
     `port=${c.port}`,
     `alert=${c.alertTo ? 'set' : 'unset'}`,
   ]

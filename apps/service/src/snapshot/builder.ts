@@ -3,7 +3,8 @@
  * database on top, and hand the result to the domain's `buildSnapshot`. The merge is the only place
  * where DB tables meet `SourceInputs`:
  *
- *   bucket_seen      → `bucketSeen` option (attention clocks, decision 29)
+ *   bucket_seen      → `bucketSeen` option (attention clocks, decision 29); a job's rows for buckets it
+ *                      is no longer in are dropped, so re-entering a bucket starts a fresh clock
  *   forms_seen       → `visit.formsSeenMax` (max of source value and stored value)
  *   queued_writes    → `queuedWrites`, and `queuedRecaps` from queued visit_note writes
  *   note_overlay     → appended to `job.noteLines` (fixture mode: the effect of ACK and sent recaps)
@@ -11,11 +12,16 @@
  *   settings         → `focusLine`, `responderInitials`
  *   review_rows      → appended after the source's rows, `rowIndex` continuing (fixture mode only)
  *
+ * Fixture mode regenerates the same ids every day relative to the board date, so note_overlay and
+ * queued_writes rows count only on the board day they were made (yesterday's ACK never acknowledges
+ * today's Problem). Live ids are unique per visit, so live mode merges every row.
+ *
  * The source status object is owned here too: after a successful load every connected source reads
  * ok with `lastOkAt = now`, unless the scenario itself says Jobber is down (the `stale` overlay).
  */
 import {
   buildSnapshot,
+  localDate,
   type Instant,
   type Job,
   type JobberId,
@@ -51,7 +57,10 @@ export function mergeState(raw: RawInputs, db: BoardDb, config: ServiceConfig, n
 
   // bucket_seen / forms_seen: record what this poll observed, then read the whole tables back.
   db.transaction(() => {
-    for (const job of raw.jobs) db.recordBucketSeen(job.id, job.bucket, job.bucketSinceSource === 'observed' ? job.bucketSince : now);
+    for (const job of raw.jobs) {
+      db.clearOtherBuckets(job.id, job.bucket);
+      db.recordBucketSeen(job.id, job.bucket, job.bucketSinceSource === 'observed' ? job.bucketSince : now);
+    }
     for (const visit of raw.visits) db.recordFormsSeen(visit.id, Math.max(visit.incompleteJobFormsCount, visit.formsSeenMax));
   });
   const formsSeen = db.formsSeen();
@@ -60,8 +69,12 @@ export function mergeState(raw: RawInputs, db: BoardDb, config: ServiceConfig, n
     formsSeenMax: Math.max(v.formsSeenMax, v.incompleteJobFormsCount, formsSeen.get(v.id) ?? 0),
   }));
 
+  // Fixture mode: only rows made on this board day (see the header).
+  const boardDate = localDate(now);
+  const today = (at: Instant): boolean => config.dataSource !== 'fixtures' || localDate(at) === boardDate;
+
   // queued_writes: DB rows win over any seeded write for the same target.
-  const dbWrites = db.queuedWrites();
+  const dbWrites = db.queuedWrites().filter((w) => today(w.createdAt));
   const dbTargets = new Set(dbWrites.map((w) => w.targetId));
   const seededWrites = (defaults.queuedWrites ?? []).filter((w) => !dbTargets.has(w.targetId));
   const queuedWrites: QueuedWrite[] = [...seededWrites, ...dbWrites.map(publicWrite)];
@@ -78,7 +91,7 @@ export function mergeState(raw: RawInputs, db: BoardDb, config: ServiceConfig, n
   }
 
   // note_overlay: lines the board queued, appended to the job's notes.
-  const overlay = overlayByJob(db.noteOverlay());
+  const overlay = overlayByJob(db.noteOverlay().filter((row) => today(row.at)));
   const jobs: Job[] = raw.jobs.map((job) => {
     const lines = overlay.get(job.id);
     return lines ? { ...job, noteLines: [...job.noteLines, ...lines] } : job;

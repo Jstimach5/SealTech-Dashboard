@@ -6,7 +6,19 @@
 import { z } from 'zod';
 import { MISS_REASONS, VISIT_RESULTS, formatAckLine, formatVisitResultLine, localHHMM, recapDecision, submissionId, type VisitResult } from '@sealtech/domain';
 import type { QueuedWritePayload } from '../../state/db.js';
-import { HttpError, newId, parseBody, refuseTestIdInLive, requireNoPrivateText, requirePerson, requireSnapshot, type Ctx, type Handler } from '../context.js';
+import {
+  HttpError,
+  currentWriteFor,
+  dropStaleSubmission,
+  newId,
+  parseBody,
+  refuseTestIdInLive,
+  requireNoPrivateText,
+  requirePerson,
+  requireSnapshot,
+  type Ctx,
+  type Handler,
+} from '../context.js';
 
 const RecapBody = z.object({
   visitId: z.string().min(1),
@@ -35,13 +47,18 @@ export const recap: Handler = async (ctx) => {
   const payload: QueuedWritePayload = { result, ...(missReason !== undefined ? { missReason } : {}), ...(text !== undefined ? { note: text } : {}), line };
   const sid = submissionId('recap', visitId, undefined, { result, missReason, note: text });
 
-  const existing = service.db.latestWriteFor('visit_note', visitId);
+  const existing = currentWriteFor(ctx, 'visit_note', visitId);
+  // An identical repeat (double tap, client retry) is the same submission whether or not it was sent yet.
+  if (existing?.submissionId === sid) return { body: { ok: true, status: 'queued', deduped: true } };
+  // Decision 12, one answer per visit: a result already in Jobber (job form, or a VISIT RESULT / CLOSE
+  // line in the visit note) is Jobber's record; the board never queues a second answer beside it.
+  if (visit.resultSource === 'jobForm' || visit.resultSource === 'note') throw new HttpError(409, 'already answered in Jobber');
   const decision = recapDecision(existing ? { visitId: existing.targetId, flushed: existing.status === 'sent' } : undefined, { visitId });
-  if (decision === 'refuse') throw new HttpError(409, 'recap already in Jobber for this visit');
-  if (decision === 'supersede' && existing?.submissionId === sid) return { body: { ok: true, status: 'queued', deduped: true } };
+  if (decision === 'refuse') throw new HttpError(409, 'already answered in Jobber');
 
   const id = decision === 'supersede' && existing ? existing.id : newId();
   service.db.transaction(() => {
+    dropStaleSubmission(ctx, sid);
     if (decision === 'supersede' && existing) service.db.replaceQueuedWrite(id, { submissionId: sid, payload, createdAt: now, createdBy: person.jobberUserId });
     else service.db.insertQueuedWrite({ id, submissionId: sid, kind: 'visit_note', targetId: visitId, payload, createdAt: now, createdBy: person.jobberUserId });
     service.db.recordSubmission({ submissionId: sid, kind: 'recap', targetId: visitId, reviewer: person.jobberUserId, at: now });
@@ -63,14 +80,19 @@ export const ack: Handler = async (ctx) => {
   if (!visit) throw new HttpError(404, `visit ${visitId} is not in the current snapshot`);
   if (visit.result !== 'Problem') throw new HttpError(409, `visit ${visitId} does not show Problem`);
   if (visit.ack) return { body: { ok: true, status: 'queued', deduped: true } };
+  // One ACK per visit: keyed on the visit, not the line (which carries H:MM), so a tap a minute later
+  // while the first ACK is still queued (or already sent) changes nothing.
+  const existing = currentWriteFor(ctx, 'ack', visitId);
+  if (existing && (existing.status === 'queued' || existing.status === 'sent')) return { body: { ok: true, status: 'queued', deduped: true } };
 
   const now = service.boardNow();
   const line = formatAckLine(localHHMM(now).replace(/^0/, ''), person.initials);
-  const sid = submissionId('ack', visitId, undefined, { line });
-  if (service.db.writeBySubmission(sid)) return { body: { ok: true, status: 'queued', deduped: true } };
+  // A failed earlier ACK may be retried: salt the id with it so the new row does not collide.
+  const sid = submissionId('ack', visitId, undefined, existing ? { retryOf: existing.id } : {});
 
   const id = newId();
   service.db.transaction(() => {
+    dropStaleSubmission(ctx, sid);
     service.db.insertQueuedWrite({ id, submissionId: sid, kind: 'ack', targetId: visitId, payload: { line }, createdAt: now, createdBy: person.jobberUserId });
     service.db.recordSubmission({ submissionId: sid, kind: 'ack', targetId: visitId, reviewer: person.jobberUserId, at: now });
     applyFixtureOverlay(ctx, { id, jobId: visit.jobId, at: now, text: line });

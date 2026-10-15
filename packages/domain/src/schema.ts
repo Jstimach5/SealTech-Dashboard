@@ -230,7 +230,8 @@ export function assertNoPrivateText(snapshot: unknown): string[] {
   const offenders: string[] = [];
   const money = /\$\s?\d/;
   const phone = /\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}/;
-  const street = /\b\d{2,6}\s+[A-Z][a-z]+\s+(St|Street|Ave|Avenue|Rd|Road|Dr|Drive|Ln|Lane|Blvd|Ct|Court|Way|Pl|Place|Trail|Pass)\b/;
+  // Any case: Jobber and the sheets carry addresses in capitals as often as not (`2635 NEEDHAM ST`).
+  const street = /\b\d{2,6}\s+[A-Za-z]+(\s+[A-Za-z]+){0,2}\s+(St|Street|Ave|Avenue|Rd|Road|Dr|Drive|Ln|Lane|Blvd|Ct|Court|Way|Pl|Place|Trail|Pass|Hwy|Highway)\b\.?/i;
   const walk = (v: unknown, path: string) => {
     if (typeof v === 'string') {
       if (money.test(v) || phone.test(v) || street.test(v)) offenders.push(`${path}: ${v.slice(0, 40)}`);

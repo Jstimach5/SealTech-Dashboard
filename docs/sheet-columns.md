@@ -21,7 +21,7 @@ Spreadsheet id `1wXopOPZuS5ro_hvvai6Ge3m7hfnzSdrOCOxADEDTgTs`. Columns are bound
 | I | Review notes | checker / reviewer | free text |
 | J | Blower door pre>post | checker | `1,412 > 1,190` or `2,094 > 1,439 (31.3%)` |
 | K | Status | office | blank, `Fixed`, `Accepted as is`, `Submitted` |
-| L | Owner notes | owner | free text; a huddle owner override is written as `OWNER:JJ 2026-10-14` |
+| L | Owner notes | owner | free text; a huddle owner override is recorded as `OWNER:JJ 2026-10-14` on the job's latest row. Until sheet writes exist (M6) the board queues that line in the service (`owner_notes`) and keeps the override in `board.db`; the sheet writer applies it to that row's L cell. It is never written by appending a row |
 
 ### Appended columns (added once by `npm run migrate:sheet -w apps/service`, decisions 8 and 30)
 

@@ -85,8 +85,9 @@ export const review: Handler = async (ctx) => {
     service.db.appendReviewRow(row);
     service.db.recordSubmission({ submissionId: sid, kind: 'review', targetId: jobId, pass, reviewer: person.jobberUserId, verdict, at: now });
   });
+  // The row is stored; a failed rebuild only delays it on the wall. rowIndex 0 = not known yet.
   const next = await service.rebuild();
-  const rowIndex = lastRowWith(next.reviewRows, sid)?.rowIndex ?? 0;
+  const rowIndex = next ? (lastRowWith(next.reviewRows, sid)?.rowIndex ?? 0) : 0;
   return { body: { ok: true, rowIndex, deduped: false } };
 };
 

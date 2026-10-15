@@ -10,6 +10,9 @@
  *   review_rows     fixture-mode Review sheet (appended rows only; live mode appends to the sheet itself)
  *   flag_rows       fixture-mode KPI Flags tab; never read into a snapshot (decision 16)
  *   owner_overrides huddle owner initials per job (decision 33)
+ *   owner_notes     `OWNER:XX YYYY-MM-DD` lines waiting for the sheet writer (M6) to land in the Owner notes
+ *                   (column L) of the job's latest Review row; service-only, never in a snapshot, because the
+ *                   domain's QueuedWrite kinds do not include an owner note
  *   note_overlay    note lines the board queued, so fixture mode shows their effect before Jobber writes exist
  *   settings        focusLine, responderInitials
  *   taps            the 30-day audit record (decision 38)
@@ -93,7 +96,18 @@ CREATE TABLE IF NOT EXISTS note_overlay (
 );
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS taps (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, screen TEXT NOT NULL, target TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS pin_failures (user_id TEXT PRIMARY KEY, count INTEGER NOT NULL, locked_until TEXT);
+CREATE TABLE IF NOT EXISTS pin_failures (user_id TEXT PRIMARY KEY, count INTEGER NOT NULL, locked_until TEXT, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS owner_notes (
+  id TEXT PRIMARY KEY,
+  submission_id TEXT NOT NULL UNIQUE,
+  job_id TEXT NOT NULL,
+  row_index INTEGER NOT NULL,
+  row_submission_id TEXT,
+  line TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  created_by TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS alerts_sent (visit_id TEXT PRIMARY KEY, at TEXT NOT NULL);
 `;
@@ -141,6 +155,20 @@ export interface NoteOverlayRow {
   writeStatus?: QueuedWrite['status'];
 }
 
+export interface OwnerNoteRow {
+  id: string;
+  submissionId: string;
+  jobId: JobberId;
+  /** The Review-sheet row whose Owner notes (column L) the line goes into. */
+  rowIndex: number;
+  /** That row's Submission id (column V) when the board wrote it; a sturdier key than the row number. */
+  rowSubmissionId?: string;
+  line: string;
+  status: 'queued' | 'sent';
+  createdAt: Instant;
+  createdBy: string;
+}
+
 export interface PinFailureRow {
   count: number;
   lockedUntil?: Instant;
@@ -173,6 +201,9 @@ export class BoardDb {
 
   private migrate(): void {
     this.db.exec(SCHEMA);
+    // pin_failures.updated_at arrived after the first release; add it to an older board.db in place.
+    const cols = (this.db.prepare('PRAGMA table_info(pin_failures)').all() as Row[]).map((r) => str(r.name));
+    if (!cols.includes('updated_at')) this.db.exec('ALTER TABLE pin_failures ADD COLUMN updated_at TEXT');
     const row = this.db.prepare('SELECT version FROM schema_version LIMIT 1').get() as Row | undefined;
     if (!row) this.db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(SCHEMA_VERSION);
     else if (num(row.version) > SCHEMA_VERSION) throw new Error(`board.db schema version ${str(row.version)} is newer than this service (${SCHEMA_VERSION})`);
@@ -209,6 +240,14 @@ export class BoardDb {
   /** Keeps the first observation; later calls for the same (job, bucket) are no-ops. */
   recordBucketSeen(jobId: JobberId, bucket: Bucket, at: Instant): void {
     this.stmt('INSERT OR IGNORE INTO bucket_seen (job_id, bucket, first_seen_at) VALUES (?, ?, ?)').run(jobId, bucket, at);
+  }
+
+  /**
+   * A job is in exactly one bucket: forget its clocks for every other bucket, so leaving and later
+   * re-entering a bucket starts a fresh clock (decision 29: the line exists exactly while the bucket does).
+   */
+  clearOtherBuckets(jobId: JobberId, bucket: Bucket): void {
+    this.stmt('DELETE FROM bucket_seen WHERE job_id = ? AND bucket <> ?').run(jobId, bucket);
   }
 
   bucketSeen(): BucketSeen {
@@ -266,6 +305,11 @@ export class BoardDb {
       patch.createdBy,
       id,
     );
+  }
+
+  /** Drops one queued write (its note_overlay rows cascade). Used for fixture rows from an earlier board day. */
+  deleteQueuedWrite(id: string): void {
+    this.stmt('DELETE FROM queued_writes WHERE id = ?').run(id);
   }
 
   markWriteSent(id: string, at: Instant): void {
@@ -380,6 +424,33 @@ export class BoardDb {
     return out;
   }
 
+  // ---- owner_notes ----------------------------------------------------------------------
+
+  /** Queues an owner note line for the sheet writer; a repeat with the same submission id is a no-op. Returns true when inserted. */
+  insertOwnerNote(n: Omit<OwnerNoteRow, 'status'>): boolean {
+    const r = this.stmt(
+      "INSERT OR IGNORE INTO owner_notes (id, submission_id, job_id, row_index, row_submission_id, line, status, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?, 'queued', ?, ?)",
+    ).run(n.id, n.submissionId, n.jobId, n.rowIndex, n.rowSubmissionId ?? null, n.line, n.createdAt, n.createdBy);
+    return Number(r.changes) > 0;
+  }
+
+  ownerNotes(): OwnerNoteRow[] {
+    return (this.stmt('SELECT * FROM owner_notes ORDER BY created_at, rowid').all() as Row[]).map((r) => {
+      const rowSubmissionId = opt(r.row_submission_id);
+      return {
+        id: str(r.id),
+        submissionId: str(r.submission_id),
+        jobId: str(r.job_id),
+        rowIndex: num(r.row_index),
+        ...(rowSubmissionId !== undefined ? { rowSubmissionId } : {}),
+        line: str(r.line),
+        status: str(r.status) as OwnerNoteRow['status'],
+        createdAt: str(r.created_at),
+        createdBy: str(r.created_by),
+      };
+    });
+  }
+
   // ---- note_overlay ---------------------------------------------------------------------
 
   upsertNoteOverlay(entry: { id: string; jobId: JobberId; at: Instant; text: string; writeId?: string }): void {
@@ -441,12 +512,19 @@ export class BoardDb {
     return { count: num(r.count), ...(lockedUntil !== undefined ? { lockedUntil } : {}) };
   }
 
-  setPinFailure(userId: string, count: number, lockedUntil?: Instant): void {
-    this.stmt('INSERT INTO pin_failures (user_id, count, locked_until) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET count = excluded.count, locked_until = excluded.locked_until').run(
-      userId,
-      count,
-      lockedUntil ?? null,
-    );
+  setPinFailure(userId: string, count: number, at: Instant, lockedUntil?: Instant): void {
+    this.stmt(
+      'INSERT INTO pin_failures (user_id, count, locked_until, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET count = excluded.count, locked_until = excluded.locked_until, updated_at = excluded.updated_at',
+    ).run(userId, count, lockedUntil ?? null, at);
+  }
+
+  /** Drops failure rows last touched before `before` (and legacy rows with no timestamp). Returns how many. */
+  purgePinFailures(before: Instant): number {
+    return Number(this.stmt('DELETE FROM pin_failures WHERE updated_at IS NULL OR updated_at < ?').run(before).changes);
+  }
+
+  pinFailureCount(): number {
+    return num((this.stmt('SELECT COUNT(*) AS n FROM pin_failures').get() as Row).n);
   }
 
   clearPinFailure(userId: string): void {

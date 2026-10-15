@@ -4,6 +4,7 @@
  */
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { DEFAULT_HOST } from '../config.js';
 import { errorMessage } from '../log.js';
 import type { BoardService } from '../service.js';
 import { HttpError, type Reply } from './context.js';
@@ -13,9 +14,9 @@ import { serveStatic } from './static.js';
 
 export const MAX_BODY_BYTES = 64 * 1024;
 
-export function sendJson(res: ServerResponse, status: number, body: unknown): void {
+export function sendJson(res: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}): void {
   const text = JSON.stringify(body);
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(text), 'Cache-Control': 'no-store' });
+  res.writeHead(status, { ...headers, 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(text), 'Cache-Control': 'no-store' });
   res.end(text);
 }
 
@@ -49,30 +50,37 @@ export function readJson(req: IncomingMessage): Promise<unknown> {
   });
 }
 
+const GET_HEAD = 'GET, HEAD';
+
+/** 405 with the `Allow` header RFC 9110 asks for. */
+function methodNotAllowed(message: string, allow: string): HttpError {
+  return new HttpError(405, message, {}, { Allow: allow });
+}
+
 async function handle(service: BoardService, req: IncomingMessage, res: ServerResponse): Promise<void> {
   const url = new URL(req.url ?? '/', 'http://localhost');
   const method = req.method ?? 'GET';
   try {
     if (url.pathname === '/snapshot.json') {
-      if (method !== 'GET' && method !== 'HEAD') throw new HttpError(405, 'GET only');
+      if (method !== 'GET' && method !== 'HEAD') throw methodNotAllowed('GET only', GET_HEAD);
       serveSnapshot(service, req, res);
       return;
     }
     if (url.pathname === '/health') {
-      if (method !== 'GET' && method !== 'HEAD') throw new HttpError(405, 'GET only');
+      if (method !== 'GET' && method !== 'HEAD') throw methodNotAllowed('GET only', GET_HEAD);
       serveHealth(service, req, res);
       return;
     }
     if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
       const route = ROUTES[url.pathname];
       if (!route) throw new HttpError(404, `no such API route: ${url.pathname}`);
-      if (route.method !== method) throw new HttpError(405, `${url.pathname} takes ${route.method}`);
+      if (route.method !== method) throw methodNotAllowed(`${url.pathname} takes ${route.method}`, route.method);
       const body = method === 'POST' ? await readJson(req) : {};
       const reply: Reply = await route.handler({ req, res, url, service, body });
       sendJson(res, reply.status ?? 200, reply.body);
       return;
     }
-    if (method !== 'GET' && method !== 'HEAD') throw new HttpError(405, 'GET only');
+    if (method !== 'GET' && method !== 'HEAD') throw methodNotAllowed('GET only', GET_HEAD);
     serveStatic(service.config.boardDist, url.pathname, res, method === 'HEAD');
   } catch (err) {
     if (res.headersSent) {
@@ -80,7 +88,7 @@ async function handle(service: BoardService, req: IncomingMessage, res: ServerRe
       return;
     }
     if (err instanceof HttpError) {
-      sendJson(res, err.status, { ok: false, error: err.message, ...err.extra });
+      sendJson(res, err.status, { ok: false, error: err.message, ...err.extra }, err.headers);
       return;
     }
     service.log.error(`${method} ${url.pathname} 500 ${errorMessage(err)}`);
@@ -94,7 +102,8 @@ export function createHttpServer(service: BoardService): Server {
   });
 }
 
-export function listen(server: Server, port: number, host = '0.0.0.0'): Promise<AddressInfo> {
+/** Binds loopback unless a host is given (config.host from HOST; the board PC is the only client today). */
+export function listen(server: Server, port: number, host: string = DEFAULT_HOST): Promise<AddressInfo> {
   return new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(port, host, () => {

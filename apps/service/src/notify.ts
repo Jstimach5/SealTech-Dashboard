@@ -19,11 +19,15 @@ export interface Mailer {
   send(message: MailMessage): Promise<void>;
 }
 
-/** Logs the message instead of sending it. */
+/**
+ * Logs the message instead of sending it. The recipient is never logged: ALERT_TO is the owner's
+ * email-to-SMS address, i.e. his phone number, and the log sits on a shared PC.
+ */
 export class LogMailer implements Mailer {
   constructor(private readonly log: Logger) {}
   async send(message: MailMessage): Promise<void> {
-    this.log.info(`alert would send to ${message.to || '(ALERT_TO unset)'}: ${message.subject} — ${message.text}`);
+    const who = message.to ? 'alert queued for the owner' : 'alert not sent (ALERT_TO unset)';
+    this.log.info(`${who}: ${message.subject} — ${message.text}`);
   }
 }
 

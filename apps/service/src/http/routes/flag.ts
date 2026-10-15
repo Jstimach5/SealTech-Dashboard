@@ -5,7 +5,7 @@
  */
 import { z } from 'zod';
 import { ISSUE_TO_FLAG, ISSUE_TYPES, type FlagRow } from '@sealtech/domain';
-import { HttpError, parseBody, requirePerson, requireSnapshot, type Handler } from '../context.js';
+import { HttpError, parseBody, refuseTestIdInLive, requirePerson, requireSnapshot, type Handler } from '../context.js';
 
 const FlagBody = z.object({
   issue: z.enum(ISSUE_TYPES),
@@ -22,6 +22,8 @@ export const flag: Handler = (ctx) => {
   const snapshot = requireSnapshot(ctx);
   const job = snapshot.jobs.find((j) => j.jobNumber === input.jobNumber);
   if (!job) throw new HttpError(404, `job #${input.jobNumber} is not in the current snapshot`);
+  // The target is a job number; the -test- rule applies to the job it resolves to.
+  refuseTestIdInLive(ctx, job.id);
   const mapped = ISSUE_TO_FLAG[input.issue];
   const row: FlagRow = {
     date: snapshot.boardDate,

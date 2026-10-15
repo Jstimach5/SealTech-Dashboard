@@ -3,6 +3,10 @@
  *
  *   tsx src/index.ts          poll loop + HTTP on PORT (the office PC runs this under NSSM)
  *   tsx src/index.ts --once   build one snapshot, write data/snapshot.json, print a summary, exit
+ *                             (never touches sessions, PIN failures, the write queue or alerts, so it
+ *                             is safe beside a running service on the same DATA_DIR)
+ *
+ * Live mode refuses to start (exit 1) when the roster is the fixture roster or holds -test- people.
  *
  * Configuration comes from the environment and `.env` in the working directory (see .env.example).
  */
@@ -18,7 +22,7 @@ async function main(argv: string[]): Promise<void> {
   const config = loadConfig();
   if (!process.env.TZ) process.env.TZ = config.tz;
   log.info(`sealtech service ${describeConfig(config)}`);
-  const service = new BoardService({ config, log });
+  const service = new BoardService({ config, log, once });
 
   if (once) {
     const r = await service.poll({ quiet: true });
@@ -36,8 +40,8 @@ async function main(argv: string[]): Promise<void> {
   }
 
   const server = createHttpServer(service);
-  const addr = await listen(server, config.port);
-  log.info(`http listening on :${addr.port} (board from ${config.boardDist})`);
+  const addr = await listen(server, config.port, config.host);
+  log.info(`http listening on ${addr.address}:${addr.port} (board from ${config.boardDist})`);
   const loop = startPollLoop(service, log);
 
   let closing = false;

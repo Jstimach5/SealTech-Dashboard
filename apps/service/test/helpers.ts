@@ -8,10 +8,21 @@ import { loadConfig, type ServiceConfig } from '../src/config.js';
 import { createHttpServer, listen } from '../src/http/server.js';
 import { silentLogger } from '../src/log.js';
 import { MemoryMailer } from '../src/notify.js';
+import { pinHash, type Roster } from '../src/auth/pin.js';
 import { BoardService, type Clock, type ServiceDeps } from '../src/service.js';
 
-export const FIXTURE_NOW = '2026-10-14T13:30:00Z';
+/** As the service stores it: loadConfig normalises FIXTURE_NOW to `toISOString()` form. */
+export const FIXTURE_NOW = '2026-10-14T13:30:00.000Z';
 export const PIN = '1234';
+
+/** A live-mode roster with no fixture people (ids without `-test-`), PIN 1234. */
+export function liveRoster(): Roster {
+  const people = [
+    { jobberUserId: 'u-live-henry', lastName: 'HENRY', initials: 'HH', role: 'crewLead' as const, reviewPass: 1 as const },
+    { jobberUserId: 'u-live-jamie', lastName: 'JAMIE', initials: 'JJ', role: 'office' as const, reviewPass: 0 as const },
+  ];
+  return { people: people.map((p) => ({ ...p, pinHash: pinHash(p.jobberUserId, PIN) })) };
+}
 
 export function tempDir(): string {
   return mkdtempSync(join(tmpdir(), 'sealtech-service-'));

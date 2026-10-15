@@ -2,22 +2,23 @@
  * The service object without HTTP: build, atomic write, reload on restart, failure handling,
  * cadence, alerts and config parsing.
  */
-import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import * as nodeFs from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SnapshotSchema, assertNoPrivateText, type Instant } from '@sealtech/domain';
+import { fixtureRoster, verifyPin } from '../src/auth/pin.js';
 import { loadConfig, parseEnvFile } from '../src/config.js';
-import { silentLogger } from '../src/log.js';
-import { MemoryMailer } from '../src/notify.js';
+import { memoryLogger, silentLogger } from '../src/log.js';
+import { LogMailer, MemoryMailer } from '../src/notify.js';
 import { BACKOFF_MS, DAY_MS, FIXTURE_TICK_MS, NIGHT_MS, cadenceMs } from '../src/schedule.js';
-import { BoardService } from '../src/service.js';
-import { buildOnce, overlayApplies } from '../src/snapshot/builder.js';
+import { BoardService, PRIVACY_FAILURE, etagFor } from '../src/service.js';
+import { buildOnce, mergeState, overlayApplies } from '../src/snapshot/builder.js';
 import { fixtureSource } from '../src/sources/fixture.js';
 import { liveSource } from '../src/sources/live.js';
 import type { Source } from '../src/sources/types.js';
 import { BoardDb } from '../src/state/db.js';
-import { FIXTURE_NOW, TestClock, tempDir, testConfig } from './helpers.js';
+import { FIXTURE_NOW, TestClock, liveRoster, tempDir, testConfig } from './helpers.js';
 
 const dirs: string[] = [];
 function dir(): string {
@@ -85,8 +86,51 @@ describe('buildOnce / --once', () => {
     expect(reloaded).toBeDefined();
     expect(reloaded?.generatedAt).toBe(FIXTURE_NOW);
     expect(reloaded?.hero.cannotInvoice).toBe(12);
-    expect(second.etag()).toBe(`"${FIXTURE_NOW}"`);
+    // The ETag always hashes the body, so a reloaded body can never inherit a tag another body had.
+    expect(second.etag()).toBe(etagFor(FIXTURE_NOW, readFileSync(join(d, 'snapshot.json'), 'utf8')));
+    expect(second.etag()?.startsWith(`"${FIXTURE_NOW};`)).toBe(true);
     second.close();
+  });
+
+  it('a corrupt or empty snapshot.json on start is logged and ignored: no snapshot (503) until the first poll rewrites it', async () => {
+    for (const bad of ['', '{"a":', '{"not":"a snapshot"}']) {
+      const d = dir();
+      writeFileSync(join(d, 'snapshot.json'), bad);
+      const log = memoryLogger();
+      let s: BoardService | undefined;
+      expect(() => {
+        s = new BoardService({ config: testConfig(d), log, mailer: new MemoryMailer(), clock: new TestClock() });
+      }).not.toThrow();
+      expect(s!.snapshot()).toBeUndefined();
+      expect(s!.etag()).toBeUndefined();
+      expect(log.lines.some((l) => l.startsWith('warn') && l.includes('snapshot.json'))).toBe(true);
+      expect((await s!.poll({ quiet: true })).ok).toBe(true);
+      expect(() => SnapshotSchema.parse(JSON.parse(readFileSync(join(d, 'snapshot.json'), 'utf8')))).not.toThrow();
+      s!.close();
+    }
+  });
+
+  it('--once builds and writes only: sessions, the write queue and alerts are left to the running service', async () => {
+    const d = dir();
+    const serving = make(d, { JOBBER_WRITES: 'on', ALERT_TO: 'x@txt.example' });
+    serving.db.insertSession('tok', 'u-test-ashby', '2026-10-14T21:30:00.000Z');
+    serving.db.insertQueuedWrite({ id: 'w1', submissionId: 's1', kind: 'ack', targetId: 'v-test-nguyen-1', payload: { line: 'ACK 9:30 JA' }, createdAt: FIXTURE_NOW, createdBy: 'u-test-office' });
+    const mailer = new MemoryMailer();
+    const once = make(d, { JOBBER_WRITES: 'on', ALERT_TO: 'x@txt.example' }, { once: true, mailer });
+    const r = await once.poll({ quiet: true });
+    expect(r.ok).toBe(true);
+    expect(existsSync(join(d, 'snapshot.json'))).toBe(true);
+    expect(once.db.session('tok')).toBeDefined(); // the running service's token survives
+    expect(once.db.queuedCount()).toBe(1); // not drained by the one-off build
+    expect(mailer.sent).toHaveLength(0);
+    expect(once.db.alertSent('v-test-nguyen-1')).toBe(false);
+    once.close();
+    serving.close();
+  });
+
+  it('FIXTURE_NOW with a UTC offset is stored as the same instant in Z form', () => {
+    const c = loadConfig({ FIXTURE_NOW: '2026-10-14T09:30:00-04:00' }, { envFile: false });
+    expect(c.fixtureNow).toBe('2026-10-14T13:30:00.000Z');
   });
 
   it('live source refuses with the hand-off message until M8', async () => {
@@ -150,15 +194,21 @@ describe('failed loads', () => {
   it('keeps the last snapshot, flips jobber to ok:false with the error, never moves lastOkAt, backs off after 3', async () => {
     const d = dir();
     const source = flaky();
-    const s = make(d, {}, { source });
+    const clock = new TestClock();
+    // Real (moving) board clock, so a regression that stamps lastOkAt on failure cannot hide.
+    const s = make(d, { FIXTURE_NOW: '' }, { source, clock });
     await s.poll({ quiet: true });
     const good = s.snapshot()!;
+    const firstOk = clock.now();
+    expect(good.sources.jobber.lastOkAt).toBe(firstOk);
+    clock.advance(5 * 60_000);
     source.fail = true;
     const r = await s.poll({ quiet: true });
     expect(r.ok).toBe(false);
     const after = s.snapshot()!;
     expect(after.hero.cannotInvoice).toBe(good.hero.cannotInvoice);
-    expect(after.sources.jobber).toMatchObject({ connected: true, ok: false, error: 'HTTP 502 from Jobber', lastOkAt: FIXTURE_NOW, lastAttemptAt: FIXTURE_NOW });
+    expect(clock.now()).not.toBe(firstOk);
+    expect(after.sources.jobber).toMatchObject({ connected: true, ok: false, error: 'HTTP 502 from Jobber', lastOkAt: firstOk, lastAttemptAt: clock.now() });
     expect(s.consecutiveFailures).toBe(1);
     expect(cadenceMs(FIXTURE_NOW, 'fixtures', s.consecutiveFailures)).toBe(FIXTURE_TICK_MS);
     await s.poll({ quiet: true });
@@ -172,6 +222,110 @@ describe('failed loads', () => {
     expect(s.snapshot()!.sources.jobber.ok).toBe(true);
     expect(s.consecutiveFailures).toBe(0);
     s.close();
+  });
+});
+
+describe('privacy guard failure (decision 4)', () => {
+  it('a load that fails the privacy check never puts the offending text in the snapshot, /health error or the log', async () => {
+    const d = dir();
+    const inner = fixtureSource('default');
+    const src = {
+      name: 'fixtures' as const,
+      leak: false,
+      async load(now: Instant) {
+        const raw = await inner.load(now);
+        if (!src.leak) return raw;
+        return { ...raw, jobs: raw.jobs.map((j, i) => (i === 0 ? { ...j, title: 'Attic air seal 2635 Needham St (555) 123-4567' } : j)) };
+      },
+    };
+    const log = memoryLogger();
+    const s = new BoardService({ config: testConfig(d), log, mailer: new MemoryMailer(), clock: new TestClock(), source: src });
+    await s.poll();
+    src.leak = true;
+    const r = await s.poll();
+    expect(r.ok).toBe(false);
+    const body = s.body()!;
+    const disk = readFileSync(join(d, 'snapshot.json'), 'utf8');
+    for (const text of [body, disk, s.lastError ?? '', r.ok ? '' : r.error, ...log.lines]) {
+      expect(text).not.toContain('Needham');
+      expect(text).not.toContain('555');
+    }
+    expect(s.snapshot()!.sources.jobber.error).toBe(`${PRIVACY_FAILURE} (at $.jobs[0].title)`);
+    expect(s.lastError).toBe(s.snapshot()!.sources.jobber.error);
+    expect(assertNoPrivateText(s.snapshot())).toEqual([]);
+    expect(log.lines.some((l) => l.includes('$.jobs[0].title'))).toBe(true);
+    s.close();
+  });
+});
+
+describe('bucket_seen', () => {
+  it('a job that leaves a bucket and comes back starts a fresh clock', async () => {
+    const d = dir();
+    const config = testConfig(d);
+    const db = new BoardDb(join(d, 'board.db'));
+    const raw = await fixtureSource('default').load(FIXTURE_NOW);
+    const job = raw.jobs.find((j) => j.bucket === 'late') ?? raw.jobs[0]!;
+    const original = job.bucket;
+    const other = original === 'upcoming' ? 'today' : 'upcoming';
+    const withBucket = (bucket: typeof original) => ({ ...raw, jobs: raw.jobs.map((j) => (j.id === job.id ? { ...j, bucket, bucketSinceSource: 'updatedAt' as const } : j)) });
+    const t0 = '2026-10-01T12:00:00.000Z';
+    const t1 = '2026-10-02T12:00:00.000Z';
+    const t2 = '2026-10-22T12:00:00.000Z';
+    mergeState(withBucket(original), db, config, t0);
+    expect(db.bucketSeen()[job.id]?.[original]).toBe(t0);
+    mergeState(withBucket(original), db, config, t1); // a continuous stay never moves the clock
+    expect(db.bucketSeen()[job.id]?.[original]).toBe(t0);
+    mergeState(withBucket(other), db, config, t1);
+    expect(db.bucketSeen()[job.id]).toEqual({ [other]: t1 });
+    mergeState(withBucket(original), db, config, t2);
+    expect(db.bucketSeen()[job.id]).toEqual({ [original]: t2 }); // re-entry: fresh clock, not t0
+    db.close();
+  });
+});
+
+describe('roster in live mode', () => {
+  it('refuses to start with the fixture roster or any -test- person; never writes one; a -test- PIN sign-in is 403', () => {
+    const d = dir();
+    writeFileSync(join(d, 'roster.json'), JSON.stringify(fixtureRoster()));
+    expect(() => make(d, { BOARD_DATA_SOURCE: 'live' })).toThrow(/live mode refuses the roster/);
+    const mixed = liveRoster();
+    mixed.people.push(fixtureRoster().people[0]!);
+    writeFileSync(join(d, 'roster.json'), JSON.stringify(mixed));
+    expect(() => make(d, { BOARD_DATA_SOURCE: 'live' })).toThrow(/-test-/);
+
+    const d2 = dir();
+    const s = make(d2, { BOARD_DATA_SOURCE: 'live' });
+    expect(existsSync(join(d2, 'roster.json'))).toBe(false); // live never auto-writes a roster
+    expect(s.roster.people).toEqual([]);
+    const r = verifyPin(s.db, fixtureRoster(), 'u-test-owner', '1234', FIXTURE_NOW, { live: true });
+    expect(r).toMatchObject({ ok: false, status: 403 });
+    s.close();
+  });
+});
+
+describe('pin_failures', () => {
+  it('unknown ids never get a row; rows older than a day are purged on start', () => {
+    const d = dir();
+    const s = make(d);
+    expect(verifyPin(s.db, s.roster, 'x'.repeat(60), '0', FIXTURE_NOW)).toMatchObject({ ok: false, status: 401 });
+    expect(s.db.pinFailureCount()).toBe(0);
+    expect(verifyPin(s.db, s.roster, 'u-test-ashby', '0', FIXTURE_NOW)).toMatchObject({ ok: false, status: 401, attemptsLeft: 2 });
+    expect(s.db.pinFailureCount()).toBe(1);
+    s.close();
+    const clock = new TestClock();
+    clock.advance(25 * 3600_000);
+    const later = make(d, {}, { clock });
+    expect(later.db.pinFailureCount()).toBe(0);
+    later.close();
+  });
+});
+
+describe('LogMailer', () => {
+  it('never logs ALERT_TO', async () => {
+    const log = memoryLogger();
+    await new LogMailer(log).send({ to: '5555551234@txt.att.net', subject: 'SealTech board: Problem not acknowledged', text: 'NGUYEN · TESTVILLE · ATT' });
+    expect(log.lines.join('\n')).not.toContain('5555551234');
+    expect(log.lines[0]).toContain('alert queued for the owner');
   });
 });
 
