@@ -2,7 +2,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 .env
-data/
+/data/
+apps/service/data/
 !fixtures/data/
 apps/board/e2e/__screenshots__/
 test-results/

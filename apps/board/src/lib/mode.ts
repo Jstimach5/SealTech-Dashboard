@@ -12,9 +12,29 @@ function params(): URLSearchParams {
 export const DEMO_BUILD: boolean = typeof __DEMO_MODE__ !== 'undefined' && __DEMO_MODE__;
 export const BOARD_BUILD: string = typeof __BOARD_BUILD__ !== 'undefined' ? __BOARD_BUILD__ : 'dev';
 
-/** `?scenario=<name>` loads /snapshots/<name>.json instead of /snapshot.json. */
+/** The build's base path (`/` for the service, `./` for a hosted demo bundle); every fetch is made under it. */
+export const BASE_PATH: string = typeof import.meta.env?.BASE_URL === 'string' ? import.meta.env.BASE_URL : '/';
+
+/** `/api/x` or `/snapshot.json` → the same path under BASE_PATH. */
+export function withBase(path: string): string {
+  const base = BASE_PATH.endsWith('/') ? BASE_PATH : `${BASE_PATH}/`;
+  return base + path.replace(/^\/+/, '');
+}
+
+/**
+ * `?scenario=<name>` (or `#<name>` where a host drops query strings) loads /snapshots/<name>.json
+ * instead of /snapshot.json.
+ */
 export function scenarioParam(): string | undefined {
-  const s = params().get('scenario');
+  const fromQuery = params().get('scenario');
+  let s = fromQuery;
+  if (!s) {
+    try {
+      s = window.location.hash.replace(/^#/, '');
+    } catch {
+      s = null;
+    }
+  }
   return s && /^[a-z0-9-]+$/.test(s) ? s : undefined;
 }
 
@@ -37,5 +57,5 @@ export function kioskMode(): boolean {
 
 export function snapshotUrl(): string {
   const scenario = scenarioParam();
-  return scenario ? `/snapshots/${scenario}.json` : '/snapshot.json';
+  return withBase(scenario ? `/snapshots/${scenario}.json` : '/snapshot.json');
 }
