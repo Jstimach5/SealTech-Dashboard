@@ -1,0 +1,99 @@
+/* PIN pad */
+.pin {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 520px;
+  gap: 48px;
+  height: 100%;
+  min-height: 0;
+}
+.pin__people {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+.pin__tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  overflow: hidden;
+}
+.pin__tiles .btn {
+  flex-direction: column;
+  min-height: 112px;
+  padding: 8px;
+  white-space: normal;
+  line-height: 1;
+  gap: 6px;
+}
+.pin__tile-name {
+  font-size: var(--tier-c);
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.pin__tile-role {
+  font-weight: 600;
+  opacity: 0.8;
+}
+.pin__pad {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+.pin__dots {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  height: 36px;
+}
+.pin__dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid var(--brand);
+}
+.pin__dot--on {
+  background: var(--brand);
+}
+.pin__keys {
+  display: grid;
+  grid-template-columns: repeat(3, 120px);
+  grid-auto-rows: 112px;
+  gap: 12px;
+  justify-content: center;
+}
+.pin__key {
+  width: 120px;
+  height: 112px;
+  border-radius: 14px;
+  border: 3px solid var(--brand);
+  background: var(--card);
+  color: var(--brand);
+  font-size: 56px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pin__key--ok {
+  background: var(--brand);
+  color: #fff;
+  font-size: var(--tier-c);
+}
+.pin__key--back {
+  font-size: var(--tier-c);
+}
+.pin__key:disabled {
+  border-color: var(--grey-fill);
+  color: var(--grey-text);
+  background: var(--page);
+}
+.pin__status {
+  min-height: 32px;
+  text-align: center;
+}

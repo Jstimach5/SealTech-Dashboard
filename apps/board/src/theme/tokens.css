@@ -1,0 +1,40 @@
+/* House palette (decision 27) and the four type tiers (decision 36) at 1920×1080 CSS px, device scale 2. */
+:root {
+  --brand: #0f3d2e;
+  --act: #e5322d;
+  --move: #1f5ce6;
+  --auto: #15803d;
+  --amber-fill: #f59e0b;
+  --amber-text: #b45309;
+  --grey-text: #6b7280;
+  --grey-fill: #e5e7eb;
+  --page: #f6f7f5;
+  --card: #ffffff;
+  --ink: #111827;
+  --line: #d1d5db;
+
+  --tier-a: 140px;
+  --tier-b: 85px;
+  --tier-c: 42px;
+  --tier-d: 24px;
+
+  --font: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif;
+
+  --page-w: 1920px;
+  --page-h: 1080px;
+  --margin-x: 96px;
+  --margin-y: 54px;
+  --gap: 24px;
+  --left-col: 1204px;
+  --rail-col: 500px;
+
+  --row-topbar: 64px;
+  --row-scoreline: 48px;
+  --row-attention: 232px;
+  --row-lanes: 380px;
+  --row-counts: 96px;
+  --row-footer: 32px;
+
+  --radius: 12px;
+  --scale: 1;
+}

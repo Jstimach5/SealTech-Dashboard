@@ -1,0 +1,290 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-size: var(--tier-d);
+  line-height: 1.15;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* The page is designed at exactly 1920×1080 and scaled down (never up) to fit a smaller window: no scroll, ever. */
+.page {
+  position: relative;
+  width: var(--page-w);
+  height: var(--page-h);
+  padding: var(--margin-y) var(--margin-x);
+  overflow: hidden;
+  transform: scale(var(--scale));
+  transform-origin: top left;
+  display: grid;
+  grid-template-rows: var(--row-topbar) minmax(0, 1fr) var(--row-footer);
+  row-gap: var(--gap);
+}
+
+/* No animation on the wall except the tick dot. */
+* {
+  transition: none !important;
+  animation: none !important;
+}
+.tick-dot {
+  transition: opacity 300ms ease !important;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: inherit;
+  min-width: 48px;
+  min-height: 48px;
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 4px solid var(--move);
+  outline-offset: 2px;
+}
+button:disabled {
+  cursor: default;
+}
+
+input,
+textarea {
+  font: inherit;
+  color: var(--ink);
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: var(--tier-c);
+  min-height: 56px;
+}
+
+/* Type tiers. Nothing on the wall is smaller than tier D. */
+.tier-a {
+  font-size: var(--tier-a);
+  font-weight: 800;
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+}
+.tier-b {
+  font-size: var(--tier-b);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.015em;
+}
+.tier-c {
+  font-size: var(--tier-c);
+  line-height: 1.05;
+}
+.tier-d {
+  font-size: var(--tier-d);
+  line-height: 1.15;
+}
+.caps {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bold {
+  font-weight: 700;
+}
+.muted {
+  color: var(--grey-text);
+}
+.brand {
+  color: var(--brand);
+}
+.act {
+  color: var(--act);
+}
+.nowrap {
+  white-space: nowrap;
+}
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.zone {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 2px solid var(--line);
+}
+
+/* Status chip: icon + word, never colour alone (decision 27). */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  padding: 0 0.35em;
+  border-radius: 0.3em;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  max-width: 100%;
+  background: var(--grey-fill);
+  color: var(--ink);
+}
+.chip--grey {
+  background: var(--grey-fill);
+  color: var(--ink);
+}
+.chip--red {
+  background: var(--act);
+  color: #fff;
+}
+.chip--blue {
+  background: var(--move);
+  color: #fff;
+}
+.chip--green {
+  background: var(--auto);
+  color: #fff;
+}
+.chip--amber {
+  background: var(--amber-fill);
+  color: var(--ink);
+}
+.chip--brand {
+  background: var(--brand);
+  color: #fff;
+}
+
+/* Small outlined tag: NO-REMINDER, NO CHARGE?, fixtures. */
+.tag {
+  display: inline-block;
+  padding: 0 0.4em;
+  border: 2px solid currentColor;
+  border-radius: 0.35em;
+  font-size: var(--tier-d);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.tag--act {
+  color: var(--act);
+}
+.tag--amber {
+  color: var(--amber-text);
+}
+.tag--muted {
+  color: var(--grey-text);
+}
+.tag--move {
+  color: var(--move);
+}
+.tag--lower {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+/* Generic wall button. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 10px;
+  border: 3px solid var(--brand);
+  color: var(--brand);
+  background: var(--card);
+  font-size: var(--tier-c);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.btn--fill {
+  background: var(--brand);
+  color: #fff;
+}
+.btn--act {
+  border-color: var(--act);
+  background: var(--act);
+  color: #fff;
+}
+.btn--amber {
+  border-color: var(--amber-fill);
+  background: var(--amber-fill);
+  color: var(--ink);
+}
+.btn--auto {
+  border-color: var(--auto);
+  background: var(--auto);
+  color: #fff;
+}
+.btn--move {
+  border-color: var(--move);
+  background: var(--move);
+  color: #fff;
+}
+.btn--quiet {
+  border-color: var(--line);
+  color: var(--ink);
+}
+.btn--small {
+  font-size: var(--tier-d);
+  min-height: 48px;
+  padding: 0 14px;
+}
+.btn:disabled {
+  border-color: var(--grey-fill);
+  background: var(--grey-fill);
+  color: var(--grey-text);
+}
+.btn--selected {
+  border-color: var(--move);
+  background: var(--move);
+  color: #fff;
+}
+
+.note {
+  font-size: var(--tier-d);
+  color: var(--grey-text);
+}
+.note--act {
+  color: var(--act);
+}
+.note--auto {
+  color: var(--auto);
+}
+.note--amber {
+  color: var(--amber-text);
+}
