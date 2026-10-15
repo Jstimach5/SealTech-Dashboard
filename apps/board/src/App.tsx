@@ -1,4 +1,10 @@
-/** Screen router by state, auto-return to TODAY, kiosk watchdog, tap records, the ACK-after-PIN flow. */
+/**
+ * Screen router by state, auto-return to TODAY, kiosk watchdog, tap records, the ACK-after-PIN flow.
+ *
+ * PIN sessions are short-lived: a session ends when the screen changes by any route (tab, ← TODAY,
+ * auto-return), right after the ACK-after-PIN post, and after CONFIG.AUTO_RETURN_SEC without input
+ * wherever the board is. A write answered 401 drops the session so the PIN gate comes back.
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CONFIG } from '@sealtech/domain';
 import { BoardContext, type Board, type Screen } from './context';
@@ -17,6 +23,7 @@ import { Footer } from './zones/Footer';
 import { TopBar } from './zones/TopBar';
 
 const WATCHDOG_MS = 5 * 60 * 1000;
+const OFFICE_ROLES: ReadonlySet<string> = new Set(['office', 'owner']);
 
 /** Scale the 1920×1080 page down to the window (never up): no scroll, ever. */
 function useViewportScale(): void {
@@ -31,7 +38,10 @@ function useViewportScale(): void {
   }, []);
 }
 
-/** Anything that is not the plain TODAY screen returns to it after CONFIG.AUTO_RETURN_SEC s without a touch, click or key. */
+/**
+ * Anything that is not the plain TODAY screen (and any open PIN session, wherever it is) ends after
+ * CONFIG.AUTO_RETURN_SEC s without a touch, click or key: back to TODAY, session and pending ACK cleared.
+ */
 function useAutoReturn(active: boolean, onReturn: () => void): void {
   useEffect(() => {
     if (!active) return;
@@ -75,6 +85,8 @@ export function App() {
   const go = useCallback(
     (next: Screen, target: string) => {
       postTap(screen, target);
+      // Leaving a screen by any route ends the PIN session (REVIEW, SCORECARD, the OWNER pick).
+      if (next !== screen) setSession(undefined);
       setScreen(next);
       setPendingAck(undefined);
     },
@@ -85,13 +97,14 @@ export function App() {
     setSession(undefined);
     setPendingAck(undefined);
   }, []);
-  useAutoReturn(screen !== 'today' || pendingAck !== undefined, onReturn);
+  useAutoReturn(screen !== 'today' || pendingAck !== undefined || session !== undefined, onReturn);
 
   const sendAck = useCallback(
     async (visitId: string, token: string) => {
       const res = await api('/api/ack', { body: { visitId }, token });
       setAckNotes((n) => ({ ...n, [visitId]: res.ok ? 'queued' : res.error }));
       if (res.ok) refresh();
+      if (!res.ok && res.status === 401) setSession(undefined);
     },
     [refresh],
   );
@@ -103,18 +116,23 @@ export function App() {
         const { [visitId]: _old, ...rest } = n;
         return rest;
       });
-      if (session) void sendAck(visitId, session.token);
-      else setPendingAck(visitId);
+      // Only an office or owner session may ACK (http-api.md); anyone else gets the PIN gate.
+      if (session && OFFICE_ROLES.has(session.person.role)) void sendAck(visitId, session.token);
+      else {
+        setSession(undefined);
+        setPendingAck(visitId);
+      }
     },
     [screen, session, sendAck],
   );
 
-  // A PIN entered for an ACK sends it at once and closes the gate.
+  // A PIN entered for an ACK sends it at once, closes the gate and ends the session once the post lands.
   useEffect(() => {
     if (!pendingAck || !session) return;
     const visitId = pendingAck;
+    const token = session.token;
     setPendingAck(undefined);
-    void sendAck(visitId, session.token);
+    void sendAck(visitId, token).finally(() => setSession(undefined));
   }, [pendingAck, session, sendAck]);
 
   const board = useMemo<Board | undefined>(
@@ -136,7 +154,7 @@ export function App() {
   }
 
   let body: JSX.Element;
-  if (pendingAck !== undefined && !session) body = <PinGate title="ACK" testId="screen-ack-pin" />;
+  if (pendingAck !== undefined && !session) body = <PinGate title="ACK" testId="screen-ack-pin" roles={OFFICE_ROLES} />;
   else {
     switch (screen) {
       case 'stages':

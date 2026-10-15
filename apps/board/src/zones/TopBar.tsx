@@ -17,7 +17,7 @@ export function TopBar() {
     <header className="topbar zone" data-testid="topbar">
       <div className="topbar__clock tier-d bold" aria-label="clock" data-testid="clock">
         <span className="nowrap">{wallClock(displayNow)}</span>
-        {frozen && <Tag text="fixtures" tone="muted" testId="fixtures-tag" lower />}
+        {(frozen || snapshot.mode === 'fixtures') && <Tag text="fixtures" tone="muted" testId="fixtures-tag" lower />}
       </div>
       <div className="topbar__centre">
         {stale.stale ? (

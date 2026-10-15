@@ -24,7 +24,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 .stage-col {
   display: flex;
@@ -35,7 +35,7 @@
   background: var(--card);
   border-radius: var(--radius);
   border: 2px solid var(--line);
-  padding: 10px;
+  padding: 10px 6px;
   overflow: hidden;
 }
 .stage-col__head {
@@ -67,7 +67,7 @@
   flex-direction: column;
   justify-content: center;
   gap: 2px;
-  padding: 0 8px;
+  padding: 0 4px 0 6px;
   border-radius: 8px;
   background: var(--page);
   border-left: 4px solid transparent;
@@ -87,6 +87,10 @@
   align-items: baseline;
   min-width: 0;
   white-space: nowrap;
+}
+/* A 9-letter city and a 4-letter scope print whole in the seven-column grid. */
+.stage-row__where .sep {
+  margin: 0 0.15em;
 }
 .stage-row__more {
   flex: none;
@@ -120,22 +124,35 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   overflow: hidden;
 }
 .cannot-row {
   flex: none;
-  height: 86px;
-  padding: 4px 12px 4px 16px;
+  height: 84px;
+  padding: 2px 12px 2px 16px;
   border-radius: 8px;
   background: var(--card);
   border: 2px solid var(--line);
   border-left: 6px solid var(--line);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 16px;
+  align-items: center;
+  min-width: 0;
+}
+.cannot-row__main {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 2px;
   min-width: 0;
+}
+.cannot-row__side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
 }
 .cannot-row--hard {
   border-left-color: var(--act);
@@ -155,20 +172,21 @@
 }
 .cannot-row__days {
   min-width: 96px;
+  flex: none;
 }
 .cannot-row__city {
   flex: 0 1 auto;
 }
 .cannot-row__fix {
-  flex: 0 1 auto;
-  max-width: 420px;
+  flex: none;
 }
 .cannot-row__clocks {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
   white-space: nowrap;
   padding-left: 106px;
+  min-width: 0;
 }
 .cannot-row__clock--open b {
   color: var(--amber-text);
@@ -176,6 +194,38 @@
 .cannot-row__sep {
   margin-right: 10px;
   color: var(--grey-text);
+}
+.cannot-row__tags {
+  display: inline-flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.cannot-row__tags .tag {
+  line-height: 1;
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+.owner-pick {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 20px;
+  overflow: hidden;
+}
+.owner-pick__head {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  white-space: nowrap;
+}
+.owner-pick__tiles .btn {
+  min-height: 72px;
+  min-width: 160px;
+}
+.owner-pick__name {
+  font-weight: 600;
 }
 
 /* ---------- PIN / REVIEW ---------- */

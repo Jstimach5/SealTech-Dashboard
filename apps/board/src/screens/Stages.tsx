@@ -1,6 +1,6 @@
 /** STAGES: seven columns in Jobber's bucket order and words (decision 3); the WIP cap line; the ≥ 20 d unsubmitted filter. */
 import { useMemo, useRef, useState } from 'react';
-import { BUCKETS, BUCKET_LABEL, CONFIG, toDate, type Bucket, type Job } from '@sealtech/domain';
+import { BUCKETS, BUCKET_LABEL, CHIP, CONFIG, toDate, type Bucket, type Job } from '@sealtech/domain';
 import { useBoard } from '../context';
 import { Button } from '../ui/Button';
 import { FitText } from '../ui/FitText';
@@ -82,7 +82,9 @@ function StageColumn({
     <section className="stage-col" data-testid={`stage-col-${bucket}`} aria-label={`${BUCKET_LABEL[bucket]} ${count}`}>
       <header className="stage-col__head">
         <span className="tier-d caps bold muted stage-col__label">{BUCKET_LABEL[bucket]}</span>
-        <span className={`tier-c bold ${red ? 'act' : ''}`}>{count}</span>
+        <span className={`tier-c bold ${red ? 'act' : ''}`} data-testid={`stage-count-${bucket}`}>
+          {red ? `${CHIP.LATE.icon} ${count}` : count}
+        </span>
       </header>
       <div className="stage-col__rows" ref={ref}>
         {collapsed ? (

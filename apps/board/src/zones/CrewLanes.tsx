@@ -1,6 +1,6 @@
 /** Crew lanes: one column per crew with a visit today; the NOW card large, NEXT rows, a DONE line, TOMORROW after 15:00. */
-import { useRef, type ReactNode } from 'react';
-import { CONFIG, localHHMM } from '@sealtech/domain';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { CHIP, CONFIG, localHHMM } from '@sealtech/domain';
 import { useBoard } from '../context';
 import { timeRange } from '../lib/format';
 import { deriveLanes, type Lane, type LaneCard } from '../lib/lanes';
@@ -97,7 +97,7 @@ function NowCard({ card, meta }: { card: LaneCard; meta: { photosCount?: number;
       <div className="now-card__chip">
         <Chip state={state} fit />
       </div>
-      {ackOverdue && <AckButton visitId={visit.id} />}
+      {card.needsAck && <AckButton visitId={visit.id} />}
       <div className="now-card__meta tier-d muted">
         <span className="now-card__meta-line nowrap" data-testid={`meta-time-${visit.id}`}>
           {timeRange(visit.startAt, visit.endAt)}
@@ -128,35 +128,87 @@ function AckButton({ visitId }: { visitId: string }) {
   );
 }
 
+/** Decision 41 outside the NOW slot: a Problem always reads `⚠ NAME · Problem`, in red, with the word. */
+const problemText = (c: LaneCard): string => `${CHIP.Problem.icon} ${c.job.lastName} · Problem`;
+const isProblem = (c: LaneCard): boolean => c.visit.result === 'Problem';
+
 function NextRow({ card }: { card: LaneCard }) {
+  const problem = isProblem(card);
   return (
-    <div className="next-row" data-testid={`card-${card.visit.id}`} data-state={card.state.kind} data-grey={card.state.grey ? 'true' : 'false'} data-ack-overdue="false">
-      <FitText text={`${localHHMM(card.visit.startAt)} ${card.job.lastName} · ${card.job.scope}`} max={42} min={24} />
+    <div
+      className={`next-row ${problem ? 'lane-problem' : ''}`}
+      data-testid={`card-${card.visit.id}`}
+      data-state={card.state.kind}
+      data-grey={card.state.grey ? 'true' : 'false'}
+      data-ack-overdue={card.ackOverdue ? 'true' : 'false'}
+    >
+      <FitText text={problem ? problemText(card) : `${localHHMM(card.visit.startAt)} ${card.job.lastName} · ${card.job.scope}`} max={42} min={24} />
     </div>
   );
 }
 
 const PLAIN_FINISH = new Set(['DONE', 'READY', 'AWAITING REVIEW']);
 
+function doneText(c: LaneCard): string {
+  if (isProblem(c)) return problemText(c);
+  const plain = PLAIN_FINISH.has(c.state.kind) || (c.state.kind === 'RESULT' && c.visit.result === 'Completed');
+  return plain ? `✓ ${c.job.lastName}` : `${c.state.chipIcon} ${c.job.lastName} · ${c.state.chipWord}`;
+}
+
+/** The finished cards on one line: as many whole names as fit (Problems first), then `+N more`. */
 function DoneRow({ cards }: { cards: LaneCard[] }) {
+  const ordered = [...cards.filter(isProblem), ...cards.filter((c) => !isProblem(c))];
+  const key = ordered.map((c) => `${c.visit.id}:${doneText(c)}`).join('|');
+  const ref = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState({ key, count: ordered.length, width: -1 });
+  const current = fit.key === key ? fit : { key, count: ordered.length, width: -1 };
+  // Start from every name whenever the cards or the line's width change, then drop names until the line fits.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (current.width !== el.clientWidth || fit !== current) {
+      setFit({ key, count: ordered.length, width: el.clientWidth });
+      return;
+    }
+    if (current.count > 1 && el.scrollWidth > el.clientWidth + 1) setFit({ ...current, count: current.count - 1 });
+  });
+  const all = ordered.length;
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let alive = true;
+    const remeasure = () => {
+      if (alive) setFit((f) => ({ ...f, count: all, width: -1 }));
+    };
+    const ro = new ResizeObserver(() => setFit((f) => (f.width === el.clientWidth ? f : { ...f, count: all, width: -1 })));
+    ro.observe(el);
+    void document.fonts?.ready?.then(remeasure);
+    return () => {
+      alive = false;
+      ro.disconnect();
+    };
+  }, [all]);
+  const shown = ordered.slice(0, current.count);
+  const hidden = ordered.length - shown.length;
   return (
-    <div className="done-row">
-      {cards.map((c) => {
-        const plain = PLAIN_FINISH.has(c.state.kind) || (c.state.kind === 'RESULT' && c.visit.result === 'Completed');
-        const text = plain ? `✓ ${c.job.lastName}` : `${c.state.chipIcon} ${c.job.lastName} · ${c.state.chipWord}`;
-        return (
-          <span
-            key={c.visit.id}
-            className={`done-row__item tier-d ${c.state.grey ? 'muted' : ''}`}
-            data-testid={`card-${c.visit.id}`}
-            data-state={c.state.kind}
-            data-grey={c.state.grey ? 'true' : 'false'}
-            data-ack-overdue={c.ackOverdue ? 'true' : 'false'}
-          >
-            {text}
-          </span>
-        );
-      })}
+    <div className={`done-row ${shown.length === 1 ? 'done-row--single' : ''}`} ref={ref} data-testid="done-row">
+      {shown.map((c) => (
+        <span
+          key={c.visit.id}
+          className={`done-row__item tier-d ${isProblem(c) ? 'lane-problem' : c.state.grey ? 'muted' : ''}`}
+          data-testid={`card-${c.visit.id}`}
+          data-state={c.state.kind}
+          data-grey={c.state.grey ? 'true' : 'false'}
+          data-ack-overdue={c.ackOverdue ? 'true' : 'false'}
+        >
+          {doneText(c)}
+        </span>
+      ))}
+      {hidden > 0 && (
+        <span className="done-row__more tier-d muted" data-testid="done-more">
+          +{hidden} more
+        </span>
+      )}
     </div>
   );
 }

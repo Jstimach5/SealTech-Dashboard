@@ -1,5 +1,5 @@
 /** Counts strip: Jobber's own buckets in Jobber's words (decision 3) plus UNANSWERED (decision 18). */
-import { BUCKETS, BUCKET_LABEL, type Bucket } from '@sealtech/domain';
+import { BUCKETS, BUCKET_LABEL, CHIP, type Bucket } from '@sealtech/domain';
 import { useBoard } from '../context';
 
 const SHOWN = BUCKETS.filter((b): b is Exclude<Bucket, 'archived'> => b !== 'archived');
@@ -40,7 +40,15 @@ export function CountsStrip() {
             <span className="count-box__label tier-d caps" data-testid={`counts-label-${b}`}>
               {printed(BUCKET_LABEL[b])}
             </span>
-            <span className={`count-box__num tier-c bold ${red ? 'act' : ''}`}>{n}</span>
+            {/* Red means act now: the number carries the ⚠ icon under its bucket word (decision 27). */}
+            <span className={`count-box__num tier-c bold ${red ? 'act' : ''}`} data-testid={`counts-num-${b}`}>
+              {red && (
+                <span className="count-box__icon" aria-label="act now">
+                  {CHIP.LATE.icon}
+                </span>
+              )}
+              {n}
+            </span>
           </button>
         );
       })}

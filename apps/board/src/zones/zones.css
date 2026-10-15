@@ -103,7 +103,7 @@
 }
 .topbar__tabs {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
 }
 .tab {
@@ -145,6 +145,17 @@
   align-items: baseline;
   gap: 10px;
   min-width: 0;
+}
+/* The crews' win number never shrinks or leaves the wall; the miss reasons give way (+N more). */
+.scoreline__left {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+.scoreline__right {
+  flex: none;
+}
+.scoreline__miss {
+  flex: none;
 }
 
 /* ---------- NEEDS ATTENTION ---------- */
@@ -272,7 +283,7 @@
   line-height: 1;
 }
 
-/* NOW card: 6 + 6 + 64 + 3 + 34 + 3 + 42 + 3 + 48 + 6 + 6 = 221 px; + 59 with the ACK row. */
+/* NOW card: 6 + 6 + 64 + 3 + 34 + 3 + 42 + 3 + 48 + 6 + 6 = 221 px; + 59 with the ACK row; + 6 when the chip word wraps. */
 .now-card {
   flex: none;
   display: flex;
@@ -312,14 +323,15 @@
   min-width: 0;
 }
 .now-card__chip {
-  height: 42px;
+  min-height: 42px;
   display: flex;
   align-items: center;
   min-width: 0;
 }
+/* The chip word shrinks to tier D, then wraps to a second line rather than being cut. */
 .now-card__chip .chip {
   width: 100%;
-  height: 42px;
+  min-height: 42px;
   padding: 0 8px;
   line-height: 1;
   display: flex;
@@ -410,16 +422,31 @@
   font-weight: 600;
 }
 .done-row {
+  flex: 1 1 auto;
+  width: 100%;
   display: flex;
+  align-items: baseline;
   gap: 12px;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
 }
-.done-row__item {
+/* Whole names only; `+N more` says what did not fit. A single name longer than the lane ellipsizes at the tier-D floor. */
+.done-row__item,
+.done-row__more {
+  flex: none;
   font-weight: 600;
+}
+.done-row--single .done-row__item {
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* Decision 41: a Problem outside the NOW slot is red, with the ⚠ icon and the word. */
+.lane-problem {
+  color: var(--act);
+  font-weight: 700;
 }
 
 /* ---------- Rail ---------- */
@@ -470,10 +497,10 @@
   overflow: hidden;
   margin-top: 2px;
 }
+/* A rail row is as tall as its words: line 1 (days · name · city), then the wrapping reason line and tags. */
 .rail-row {
   flex: none;
-  height: 128px;
-  padding: 6px 10px 6px 14px;
+  padding: 6px 10px 8px 14px;
   border-radius: 8px;
   background: var(--page);
   border-left: 4px solid transparent;
@@ -503,50 +530,52 @@
   height: 44px;
   white-space: nowrap;
 }
-.rail-row__days,
-.rail-row__name {
+.rail-row__days {
   flex: none;
 }
-.rail-row__where {
-  flex: 1 1 auto;
-  display: inline-flex;
-  align-items: baseline;
-  min-width: 0;
+.rail-row__icon {
+  font-size: var(--tier-d);
+  margin-right: 4px;
+  vertical-align: 0.2em;
 }
-.rail-row__city {
+.rail-row__name {
   flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+.rail-row--wait .rail-row__name {
+  color: var(--grey-text);
+}
+/* The city prints whole up to 10 characters (decision 4: last name + city + scope). */
+.rail-row__city {
+  flex: none;
+  max-width: 172px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .rail-row__scope {
   flex: none;
 }
-.rail-row__tags {
-  flex: none;
-  display: inline-flex;
-  gap: 6px;
-  margin-left: auto;
-}
 .rail-row__bottom {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  row-gap: 2px;
+  display: block;
   min-width: 0;
-  white-space: nowrap;
-  line-height: 1.05;
+  white-space: normal;
+  line-height: 1.2;
 }
 .rail-row__reason {
-  flex: none;
   color: var(--ink);
 }
 .rail-row--wait .rail-row__reason {
   color: var(--grey-text);
 }
 .rail-row__owner {
-  flex: none;
   margin-right: 8px;
 }
 .rail-row__bottom .tag {
-  margin-right: 6px;
+  margin: 2px 8px 0 0;
+  line-height: 1.1;
 }
 
 /* ---------- Counts strip: eight boxes sized to their words ----------
@@ -555,7 +584,7 @@
    Height: 4 border + 5 padding + label 48 (two lines) + number 38 = 95 ≤ 96. */
 .counts {
   display: flex;
-  gap: 5px;
+  gap: 8px;
   height: var(--row-counts);
 }
 .count-box {
@@ -593,6 +622,11 @@
 .count-box__num {
   line-height: 0.9;
   white-space: nowrap;
+}
+.count-box__icon {
+  font-size: var(--tier-d);
+  margin-right: 4px;
+  vertical-align: 0.15em;
 }
 .count-box__unknown {
   line-height: 1;

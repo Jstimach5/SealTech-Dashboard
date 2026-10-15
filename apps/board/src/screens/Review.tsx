@@ -1,10 +1,11 @@
 /**
- * REVIEW (decisions 5, 7, 8, 40, 43): the signed-in reviewer's queue of Requires Invoicing jobs
- * lacking their pass, both verdicts side by side (checker + human), READY / FIX / HOLD to
- * /api/review, the unmatched rows panel, and the office tools (FLAG / FOCUS / RESPONDER).
+ * REVIEW (decisions 5, 7, 8, 40, 43): the signed-in reviewer's queue — the domain's cannot-invoice
+ * lines (snapshot.cannotInvoice, which includes leaked jobs such as a NO-REMINDER line) lacking the
+ * reviewer's pass by the domain's verdict roll-up — both verdicts side by side (checker + latest
+ * human), READY / FIX / HOLD to /api/review, the unmatched rows panel, and the office tools.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CHIP, CONFIG, FIX_PICKLIST, fileStem, localHHMM, verdictsByJob, type Job, type JobVerdicts, type ReviewRow, type Verdict } from '@sealtech/domain';
+import { CHIP, CONFIG, FIX_PICKLIST, fileStem, localHHMM, sortByOrderKey, verdictsByJob, type Job, type JobVerdicts, type ReviewRow, type Verdict } from '@sealtech/domain';
 import { useBoard } from '../context';
 import { api } from '../data/api';
 import { dayMonth, splitLabel } from '../lib/format';
@@ -23,31 +24,45 @@ export function Review({ session }: { session: Session }) {
   const { snapshot, now, go, setSession } = useBoard();
   const pass = session.person.reviewPass;
   const verdicts = useMemo(() => verdictsByJob(snapshot.reviewRows), [snapshot.reviewRows]);
-  const queue = useMemo(
-    () =>
-      snapshot.jobs.filter((j) => {
-        if (j.bucket !== 'requires_invoicing') return false;
-        const v = verdicts[j.id];
-        return pass === 1 ? !(v?.pass1Ready ?? false) : pass === 2 ? !(v?.pass2Ready ?? false) : false;
-      }),
-    [snapshot.jobs, verdicts, pass],
-  );
+  const queue = useMemo(() => {
+    if (pass !== 1 && pass !== 2) return [];
+    const jobs = new Map(snapshot.jobs.map((j) => [j.id, j]));
+    const out: Job[] = [];
+    for (const line of snapshot.cannotInvoice) {
+      const job = jobs.get(line.jobId);
+      if (!job) continue;
+      const v = verdicts[job.id];
+      const passed = pass === 1 ? (v?.pass1Ready ?? false) : (v?.pass2Ready ?? false);
+      if (!passed) out.push(job);
+    }
+    return out;
+  }, [snapshot.jobs, snapshot.cannotInvoice, verdicts, pass]);
   const unmatched = useMemo(() => snapshot.reviewRows.filter((r) => r.match === 'none'), [snapshot.reviewRows]);
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [acting, setActing] = useState(false);
+  const [offset, setOffset] = useState(0);
   const selected = queue.find((j) => j.id === selectedId) ?? queue[0];
-  // The queue shows whole cards only: as many as fit in two rows, the selected one always among them, then `+N more`.
+  // The queue shows whole cards only: as many as fit in two rows, then a `+N more ›` tile that pages on.
   const listRef = useRef<HTMLDivElement>(null);
   const { width: listWidth } = useZoneSize(listRef);
   const perRow = Math.max(1, Math.floor((listWidth + QUEUE_GAP) / (QUEUE_CARD_W + QUEUE_GAP)));
   const capacity = perRow * QUEUE_ROWS;
   let visible = queue;
   let hiddenCount = 0;
+  let nextStart = 0;
   if (queue.length > capacity) {
-    visible = queue.slice(0, capacity - 1);
+    const per = Math.max(1, capacity - 1);
+    const start = offset < queue.length ? offset : 0;
+    visible = queue.slice(start, start + per);
     if (selected && !visible.includes(selected)) visible = [...visible.slice(0, -1), selected];
     hiddenCount = queue.length - visible.length;
+    nextStart = start + per >= queue.length ? 0 : start + per;
   }
+  const pageOn = () => {
+    setOffset(nextStart);
+    const first = queue[nextStart];
+    if (first) setSelectedId(first.id);
+  };
   const hhmm = localHHMM(now);
   const past1 = hhmm >= CONFIG.VERDICT_CUTOFF_PASS1;
   const past2 = hhmm >= CONFIG.VERDICT_CUTOFF_PASS2;
@@ -90,9 +105,9 @@ export function Review({ session }: { session: Session }) {
                 <QueueRow key={job.id} job={job} v={verdicts[job.id]} selected={job.id === selected?.id} onSelect={() => setSelectedId(job.id)} />
               ))}
               {hiddenCount > 0 && (
-                <div className="review-row review-row--more tier-c muted" data-testid="review-queue-more">
-                  +{hiddenCount} more
-                </div>
+                <button type="button" className="review-row review-row--more tier-c muted" data-testid="review-queue-more" aria-label={`${hiddenCount} more jobs: show the next ones`} onClick={pageOn}>
+                  +{hiddenCount} more ›
+                </button>
               )}
             </div>
           )}
@@ -147,8 +162,16 @@ function QueueRow({ job, v, selected, onSelect }: { job: Job; v: JobVerdicts | u
 
 type Mode = 'idle' | 'fix' | 'hold';
 
+/** The latest human (pass 1 or 2) verdict row, in the domain's row order (rowOrderKey), never by comparing raw strings. */
+function latestHumanRow(v: JobVerdicts | undefined): ReviewRow | undefined {
+  if (!v) return undefined;
+  if (v.latest?.pass !== undefined) return v.latest;
+  const human = [v.pass1, v.pass2].filter((r): r is ReviewRow => r !== undefined);
+  return sortByOrderKey(human).at(-1);
+}
+
 function Detail({ job, v, pass, session, onActing }: { job: Job; v: JobVerdicts | undefined; pass: 1 | 2; session: Session; onActing: (acting: boolean) => void }) {
-  const { refresh } = useBoard();
+  const { refresh, setSession } = useBoard();
   const [mode, setModeState] = useState<Mode>('idle');
   // FIX and HOLD take the queue's room while they are open; the list comes back on cancel or save.
   const setMode = (m: Mode) => {
@@ -162,8 +185,7 @@ function Detail({ job, v, pass, session, onActing }: { job: Job; v: JobVerdicts 
   const { city, scope } = splitLabel(`${job.lastName} · ${job.city} · ${job.scope}`);
   const pass1Ready = v?.pass1Ready ?? false;
   const readyBlocked = pass === 2 && !pass1Ready;
-  const human = pass === 2 ? (v?.pass2 ?? v?.pass1) : v?.pass1;
-  const latestHuman = v?.pass2 && v?.pass1 ? (v.pass2.reviewedAt ?? '') > (v.pass1.reviewedAt ?? '') ? v.pass2 : v.pass1 : (human ?? v?.pass2 ?? v?.pass1);
+  const latestHuman = latestHumanRow(v);
 
   useEffect(() => {
     if (status?.kind !== 'saved') return;
@@ -176,6 +198,11 @@ function Detail({ job, v, pass, session, onActing }: { job: Job; v: JobVerdicts 
     setStatus(undefined);
     const res = await api('/api/review', { body: { jobId: job.id, pass, verdict, ...extra }, token: session.token });
     setBusy(false);
+    // An expired or unknown token: back to the PIN gate.
+    if (!res.ok && res.status === 401) {
+      setSession(undefined);
+      return;
+    }
     if (res.ok) {
       setStatus({ kind: 'saved', text: 'saved' });
       setMode('idle');
@@ -204,8 +231,8 @@ function Detail({ job, v, pass, session, onActing }: { job: Job; v: JobVerdicts 
         </Button>
       </div>
       <div className="review__verdicts">
-        <VerdictCard title="Checker (overnight)" row={v?.checker} />
-        <VerdictCard title={latestHuman?.pass === 2 ? 'Latest human · 2nd pass' : 'Latest human · 1st pass'} row={latestHuman} people={session.person} />
+        <VerdictCard title="Checker (overnight)" row={v?.checker} testId="verdict-checker" />
+        <VerdictCard title={latestHuman?.pass === 2 ? 'Latest human · 2nd pass' : latestHuman?.pass === 1 ? 'Latest human · 1st pass' : 'Latest human'} row={latestHuman} testId="verdict-human" />
       </div>
       {mode === 'idle' && (
         <div className="review__buttons">
@@ -275,12 +302,13 @@ function Detail({ job, v, pass, session, onActing }: { job: Job; v: JobVerdicts 
   );
 }
 
-function VerdictCard({ title, row, people }: { title: string; row: ReviewRow | undefined; people?: Session['person'] }) {
+function VerdictCard({ title, row, testId }: { title: string; row: ReviewRow | undefined; testId: string }) {
   const { snapshot } = useBoard();
-  const who = row?.reviewerUserId ? (snapshot.people.find((p) => p.jobberUserId === row.reviewerUserId)?.initials ?? people?.initials ?? '') : '';
+  // The reviewer's initials from the roster, or `?` when the reviewer is not in it: never the viewer's.
+  const who = row?.reviewerUserId ? (snapshot.people.find((p) => p.jobberUserId === row.reviewerUserId)?.initials ?? '?') : '';
   const tone = row?.verdict === 'READY' ? 'note--auto' : row?.verdict === 'FIX' || row?.verdict === 'HOLD' ? 'note--amber' : 'muted';
   return (
-    <div className="verdict-card">
+    <div className="verdict-card" data-testid={testId}>
       <span className="tier-d caps bold muted">{title}</span>
       <span className={`tier-c bold ${tone}`}>{row?.verdict ?? '—'}</span>
       <span className="tier-d muted ellipsis">

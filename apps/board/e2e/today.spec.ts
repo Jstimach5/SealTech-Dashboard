@@ -72,31 +72,31 @@ for (const scenario of SCENARIOS) {
       await expect(page.getByTestId('attention-row-j-test-holt')).toContainText('ACTION REQUIRED');
     });
 
-    test('the rail leads with BAUER (NO-REMINDER), never ends on PROGRAM-WAIT, and every reason is whole', async ({ page }, info) => {
+    test('the rail leads with BAUER (NO-REMINDER, hard red with its word), and no rail row is cut', async ({ page }, info) => {
       const rows = page.locator('[data-testid^="rail-row-"]');
       const n = await rows.count();
       expect(n).toBeGreaterThan(0);
       expect(n).toBeLessThanOrEqual(3);
       await expect(rows.first()).toHaveAttribute('data-testid', 'rail-row-j-test-bauer');
       await expect(rows.first()).toContainText('NO-REMINDER');
-      if (n >= 3) await expect(rows.last()).not.toHaveAttribute('data-reason', 'PROGRAM-WAIT');
+      await expect(page.getByTestId('hard-red-j-test-bauer')).toHaveText('⚠ 20+ d UNSUBMITTED');
       const lines = fixture(scenario, info.project.testDir).cannotInvoice;
       const seen = await rows.evaluateAll((els) =>
-        els.map((el) => {
-          const reason = el.querySelector('[data-testid="rail-reason"]') as HTMLElement | null;
-          return {
-            id: el.getAttribute('data-testid') ?? '',
-            text: reason?.textContent ?? '',
-            clipped: reason ? reason.scrollWidth > reason.clientWidth + 1 : true,
-          };
-        }),
+        els.map((el) => ({
+          id: el.getAttribute('data-testid') ?? '',
+          text: el.querySelector('[data-testid="rail-reason"]')?.textContent ?? '',
+          city: el.querySelector('[data-testid="rail-city"]') as HTMLElement | null,
+          cut: el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1 || Array.from(el.querySelectorAll<HTMLElement>('.rail-row__top > *')).some((c) => c.scrollWidth > c.clientWidth + 1),
+          bottom: el.getBoundingClientRect().bottom,
+          zoneBottom: (el.parentElement as HTMLElement).getBoundingClientRect().bottom,
+        })),
       );
       for (const row of seen) {
         const line = lines.find((l) => `rail-row-${l.jobId}` === row.id);
         expect(line, row.id).toBeDefined();
         expect(row.text).toContain(line?.reason ?? '');
-        if (line?.fixPick) expect(row.text).toContain(line.fixPick);
-        expect(row.clipped, `${row.id} reason clipped`).toBe(false);
+        expect(row.cut, `${row.id} cut`).toBe(false);
+        expect(row.bottom, `${row.id} inside the rail`).toBeLessThanOrEqual(row.zoneBottom + 1);
       }
     });
   });
@@ -143,7 +143,8 @@ test('late-afternoon: the ACK landed on NGUYEN and the DALE lane shows TOMORROW'
   await openBoard(page, 'late-afternoon');
   const nguyen = page.getByTestId('card-v-test-nguyen-1');
   await expect(nguyen).toHaveAttribute('data-ack-overdue', 'false');
-  await expect(nguyen).not.toHaveCSS('border-top-color', ACT_RED);
+  await expect(nguyen).not.toHaveClass(/now-card--ack/);
+  await expect(nguyen).toHaveCSS('border-top-width', '0px');
   await expect(page.getByTestId('lane-DALE')).toContainText('TOMORROW');
   await expect(page.getByTestId('tomorrow-DALE')).toContainText('QUINN');
   await expect(page.getByTestId('tomorrow-ASHBY')).toContainText('LEE');
@@ -173,4 +174,138 @@ test('huddle-day: nothing started, the NOW cards read NOT STARTED or NOW', async
   await expect(page.getByTestId('card-v-test-nguyen-1')).toHaveAttribute('data-state', 'NOT STARTED');
   await expect(page.getByTestId('card-v-test-mbeki-1')).toHaveAttribute('data-state', 'NOW');
   await expect(page.getByTestId('card-v-test-nguyen-1')).toHaveAttribute('data-ack-overdue', 'false');
+});
+
+test('09:10, five minutes after NGUYEN\'s Problem: the ACK button is already there, no red border yet', async ({ page }) => {
+  await openBoard(page, 'default', '&now=2026-10-14T13:10:00Z');
+  const nguyen = page.getByTestId('card-v-test-nguyen-1');
+  await expect(nguyen).toHaveClass(/now-card/);
+  await expect(nguyen).toHaveAttribute('data-ack-overdue', 'false');
+  await expect(nguyen).not.toHaveCSS('border-top-color', ACT_RED);
+  await expect(page.getByTestId('ack-v-test-nguyen-1')).toBeVisible();
+  await expect(nguyen).toContainText('Problem');
+});
+
+test('13:30: the un-ACKed Problem stays the NOW card with its red border and ACK while OKAFOR waits', async ({ page }) => {
+  await openBoard(page, 'default', '&now=2026-10-14T17:30:00Z');
+  await expect(page.getByTestId('clock')).toContainText('13:30');
+  const nguyen = page.getByTestId('card-v-test-nguyen-1');
+  await expect(nguyen).toHaveClass(/now-card/);
+  await expect(nguyen).toHaveAttribute('data-ack-overdue', 'true');
+  await expect(nguyen).toHaveCSS('border-top-color', ACT_RED);
+  await expect(page.getByTestId('ack-v-test-nguyen-1')).toBeVisible();
+  await expect(page.getByTestId('card-v-test-okafor-1')).toHaveClass(/next-row/);
+});
+
+test('late-afternoon: an ACKed Problem in the DONE line reads ⚠ NGUYEN · Problem in red', async ({ page }) => {
+  await openBoard(page, 'late-afternoon');
+  const nguyen = page.getByTestId('card-v-test-nguyen-1');
+  await expect(nguyen).toHaveClass(/done-row__item/);
+  await expect(nguyen).toHaveText('⚠ NGUYEN · Problem');
+  await expect(nguyen).toHaveCSS('color', ACT_RED);
+});
+
+test('red words and counts carry the ⚠ icon (decision 27)', async ({ page }) => {
+  await openBoard(page, 'default');
+  await expect(page.getByTestId('attention-row-j-test-varga').locator('.attention__word')).toHaveText('⚠ LATE');
+  await expect(page.getByTestId('counts-num-late')).toHaveText('⚠1');
+  await expect(page.getByTestId('counts-num-action_required')).toHaveText('⚠1');
+  await expect(page.getByTestId('rail-row-j-test-price').getByTestId('rail-days')).toHaveText('⚠12 d');
+  // The REQUIRES INVOICING trigger word never drops below 32 px (abbreviated where it cannot fit).
+  const words = await page.locator('.attention__word--requires_invoicing > span').evaluateAll((els) => els.map((e) => ({ size: parseFloat(getComputedStyle(e).fontSize), cut: e.scrollWidth > e.clientWidth + 1, text: e.textContent })));
+  expect(words.length).toBeGreaterThan(0);
+  for (const w of words) {
+    expect(w.size).toBeGreaterThanOrEqual(32);
+    expect(w.cut).toBe(false);
+    expect(['REQUIRES INVOICING', 'REQ. INVOICING']).toContain(w.text);
+  }
+});
+
+test('targets on TODAY keep 8 px gaps', async ({ page }) => {
+  await openBoard(page, 'default');
+  for (const sel of ['.topbar__tabs > button', '.counts > button']) {
+    const rects = await page.locator(sel).evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => ({ left: r.left, right: r.right })));
+    for (let i = 1; i < rects.length; i++) expect((rects[i]?.left ?? 0) - (rects[i - 1]?.right ?? 0), sel).toBeGreaterThanOrEqual(8 - 0.5);
+  }
+});
+
+/** The default fixture, changed to exercise the legibility rules with long words. */
+function stressed(testDir: string): unknown {
+  const s = JSON.parse(readFileSync(join(testDir, '..', '..', '..', 'fixtures', 'snapshots', 'default.json'), 'utf8')) as {
+    scoreline: { misses: Record<string, number> };
+    jobs: Array<{ id: string; lastName: string; city: string }>;
+    visits: Array<{ id: string; result?: string; resultAt?: string; completedAt?: string; startAt: string; endAt: string; assignedUserIds: string[] }>;
+    cannotInvoice: Array<{ jobId: string; label: string; fixPick?: string }>;
+  };
+  s.scoreline.misses = { ACCESS: 2, 'SCOPE CHANGED': 1, 'PRE-EXISTING': 1, 'EQUIPMENT/TRUCK': 1, OVERCOMMITTED: 1 };
+  const santos = s.visits.find((v) => v.id === 'v-test-santos-1');
+  if (santos) {
+    santos.result = 'Customer cancelled';
+    santos.resultAt = '2026-10-14T13:00:00.000Z';
+  }
+  // CORDER finished FOSTER and MORGAN before MBEKI: three names on one DONE line.
+  for (const [id, h] of [
+    ['v-test-foster-1', '09'],
+    ['v-test-morgan-1', '10'],
+  ] as const) {
+    const v = s.visits.find((x) => x.id === id);
+    if (!v) continue;
+    v.assignedUserIds = ['u-test-corder', 'u-test-c2'];
+    v.startAt = `2026-10-14T${h}:00:00.000Z`;
+    v.endAt = `2026-10-14T${h}:30:00.000Z`;
+    v.resultAt = v.endAt;
+    v.completedAt = v.endAt;
+  }
+  // OSEI (FIX OPEN, the longest picklist item, a 10-character city) is the top rail line.
+  const i = s.cannotInvoice.findIndex((l) => l.jobId === 'j-test-osei');
+  const [osei] = s.cannotInvoice.splice(i, 1);
+  if (osei) {
+    osei.fixPick = 'Blower-door reading not photographed';
+    osei.label = 'OSEI · KALAMAZOOX · WALL';
+    s.cannotInvoice.unshift(osei);
+  }
+  return s;
+}
+
+test('legibility under long words: rail reason · FIX pick wraps, cities print whole, chips wrap, DONE and scoreline say +N more', async ({ page }, info) => {
+  const snap = stressed(info.project.testDir);
+  await page.route('**/snapshots/default.json', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(snap) }));
+  await openBoard(page, 'default');
+  await expectNoHorizontalScroll(page);
+  await expectMinFontSize(page, 24);
+
+  const osei = page.getByTestId('rail-row-j-test-osei');
+  await expect(page.locator('[data-testid^="rail-row-"]').first()).toHaveAttribute('data-testid', 'rail-row-j-test-osei');
+  await expect(osei.getByTestId('rail-reason')).toHaveText('FIX OPEN · Blower-door reading not photographed');
+  await expect(osei.getByTestId('rail-city')).toHaveText('KALAMAZOOX');
+  const rail = await page.locator('[data-testid^="rail-row-"]').evaluateAll((els) =>
+    els.map((el) => ({
+      id: el.getAttribute('data-testid'),
+      cut: el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1 || Array.from(el.querySelectorAll<HTMLElement>('.rail-row__top > *')).some((c) => c.scrollWidth > c.clientWidth + 1),
+      out: el.getBoundingClientRect().bottom > (el.parentElement as HTMLElement).getBoundingClientRect().bottom + 1,
+    })),
+  );
+  for (const r of rail) expect(r, `${r.id}`).toEqual({ id: r.id, cut: false, out: false });
+
+  // A chip word that does not fit at tier D wraps to a second line instead of being cut.
+  const chip = await page.getByTestId('card-v-test-santos-1').locator('.now-card__chip .chip > span').evaluate((e) => ({ size: parseFloat(getComputedStyle(e).fontSize), sw: e.scrollWidth, cw: e.clientWidth, text: e.textContent }));
+  expect(chip.text).toBe('✕ Customer cancelled');
+  expect(chip.size).toBeGreaterThanOrEqual(24);
+  expect(chip.sw).toBeLessThanOrEqual(chip.cw + 1);
+
+  // DONE: whole names, then +N more.
+  const done = page.getByTestId('lane-CORDER').getByTestId('done-row');
+  await expect(done).toContainText('✓ FOSTER');
+  await expect(page.getByTestId('lane-CORDER').getByTestId('done-more')).toHaveText(/^\+\d more$/);
+  const doneBox = await done.evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth }));
+  expect(doneBox.sw).toBeLessThanOrEqual(doneBox.cw + 1);
+
+  // Scoreline: the first two miss reasons and +N more; the READY FIRST PASS number stays on the wall.
+  await expect(page.getByTestId('scoreline-more')).toHaveText(/\+3 more/);
+  await expect(page.getByTestId('scoreline')).toContainText('ACCESS');
+  await expect(page.getByTestId('scoreline')).toContainText('SCOPE CHANGED');
+  const right = await page.getByTestId('scoreline-right').evaluate((e) => ({ right: e.getBoundingClientRect().right, zone: (e.parentElement as HTMLElement).getBoundingClientRect().right, sw: e.scrollWidth, cw: e.clientWidth }));
+  expect(right.right).toBeLessThanOrEqual(right.zone + 1);
+  expect(right.sw).toBeLessThanOrEqual(right.cw + 1);
+  await expect(page.getByTestId('scoreline-right')).toContainText('3 of 4');
 });

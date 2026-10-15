@@ -32,7 +32,7 @@ export interface PinState {
 const PIN_ROLES: ReadonlySet<PinPerson['role']> = new Set(['office', 'owner', 'crewLead']);
 const DEMO_PIN = '1234';
 
-export function usePin(snapshot: Snapshot, onSession: (s: Session) => void): PinState {
+export function usePin(snapshot: Snapshot, onSession: (s: Session) => void, roles: ReadonlySet<string> = PIN_ROLES): PinState {
   const [people, setPeople] = useState<PinPerson[]>([]);
   const [peopleError, setPeopleError] = useState<string | undefined>(undefined);
   const [busy, setBusy] = useState(false);
@@ -42,15 +42,25 @@ export function usePin(snapshot: Snapshot, onSession: (s: Session) => void): Pin
   const [lockedAt, setLockedAt] = useState(0);
   const [demoFallback, setDemoFallback] = useState(false);
   const alive = useRef(true);
+  const unlockTimer = useRef<number | undefined>(undefined);
+
+  // The lockout message lasts exactly as long as the service's 423 window.
+  useEffect(
+    () => () => {
+      if (unlockTimer.current !== undefined) window.clearTimeout(unlockTimer.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     alive.current = true;
-    const fromSnapshot = snapshot.people.filter((p) => PIN_ROLES.has(p.role));
+    const allowed = (p: PinPerson) => PIN_ROLES.has(p.role) && roles.has(p.role);
+    const fromSnapshot = snapshot.people.filter(allowed);
     void (async () => {
       const res = await api<{ ok: true; people: PinPerson[] }>('/api/people');
       if (!alive.current) return;
       if (res.ok && Array.isArray(res.data.people)) {
-        setPeople(res.data.people.filter((p) => PIN_ROLES.has(p.role)));
+        setPeople(res.data.people.filter(allowed));
         setPeopleError(undefined);
       } else {
         setPeople(fromSnapshot);
@@ -61,7 +71,7 @@ export function usePin(snapshot: Snapshot, onSession: (s: Session) => void): Pin
     return () => {
       alive.current = false;
     };
-  }, [snapshot.people]);
+  }, [snapshot.people, roles]);
 
   const submit = useCallback(
     async (userId: string, pin: string) => {
@@ -80,6 +90,15 @@ export function usePin(snapshot: Snapshot, onSession: (s: Session) => void): Pin
         setLockedForSec(sec);
         setLockedAt(Date.now());
         setError(res.error);
+        // The service resets the failure count after a lock: no stale "N left" once it ends.
+        setAttemptsLeft(undefined);
+        if (unlockTimer.current !== undefined) window.clearTimeout(unlockTimer.current);
+        unlockTimer.current = window.setTimeout(() => {
+          unlockTimer.current = undefined;
+          if (!alive.current) return;
+          setError(undefined);
+          setLockedForSec(0);
+        }, sec * 1000);
         return;
       }
       if (res.status === 401) {

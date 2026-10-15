@@ -3,7 +3,8 @@
  * (tier D, 24 px, is the floor everywhere). Measured with a hidden DOM probe that carries the same
  * font, numeric variant and letter-spacing (a canvas would ignore tabular digits); re-measured when
  * the container resizes or the web font lands. With `wrap`, text that still does not fit at `min`
- * is allowed to wrap instead of being clipped.
+ * is allowed to wrap instead of being clipped. With `fallbacks`, a shorter form is printed when the
+ * text would not fit at `min` (the full text stays in the aria-label).
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 
@@ -15,6 +16,8 @@ interface Props {
   className?: string;
   style?: CSSProperties;
   title?: string;
+  /** Shorter forms, tried in order when `text` does not fit at `min`. */
+  fallbacks?: readonly string[] | undefined;
 }
 
 let probe: HTMLSpanElement | undefined;
@@ -38,10 +41,12 @@ function measure(text: string, cs: CSSStyleDeclaration, px: number, currentPx: n
   return probe.getBoundingClientRect().width;
 }
 
-export function FitText({ text, max, min, wrap = false, className, style, title }: Props) {
+export function FitText({ text, max, min, wrap = false, className, style, title, fallbacks }: Props) {
   const ref = useRef<HTMLSpanElement>(null);
   const [size, setSize] = useState(max);
   const [wrapping, setWrapping] = useState(false);
+  const [printed, setPrinted] = useState(text);
+  const fallbackKey = (fallbacks ?? []).join('\u0000');
 
   const fit = useCallback(() => {
     const el = ref.current;
@@ -50,12 +55,21 @@ export function FitText({ text, max, min, wrap = false, className, style, title 
     if (avail <= 0) return;
     const cs = getComputedStyle(el);
     const current = parseFloat(cs.fontSize) || max;
-    const width = measure(text, cs, max, current);
+    const candidates = [text, ...(fallbackKey === '' ? [] : fallbackKey.split('\u0000'))];
+    let chosen = text;
     let next = max;
-    if (width > avail && width > 0) next = Math.max(min, Math.floor((max * avail * 0.99) / width));
+    let width = 0;
+    for (const candidate of candidates) {
+      chosen = candidate;
+      width = measure(candidate, cs, max, current);
+      next = max;
+      if (width > avail && width > 0) next = Math.max(min, Math.floor((max * avail * 0.99) / width));
+      if ((width * next) / max <= avail) break;
+    }
+    setPrinted(chosen);
     setSize(next);
     setWrapping(wrap && next === min && (width * min) / max > avail);
-  }, [text, max, min, wrap]);
+  }, [text, max, min, wrap, fallbackKey]);
 
   useLayoutEffect(fit, [fit]);
 
@@ -79,6 +93,7 @@ export function FitText({ text, max, min, wrap = false, className, style, title 
       ref={ref}
       className={className}
       {...(title !== undefined ? { title } : {})}
+      {...(printed !== text ? { 'aria-label': text } : {})}
       style={{
         display: 'block',
         width: '100%',
@@ -90,7 +105,11 @@ export function FitText({ text, max, min, wrap = false, className, style, title 
         ...style,
       }}
     >
-      {text}
+      {printed === text || candidatesInclude(fallbacks, printed) ? printed : text}
     </span>
   );
+}
+
+function candidatesInclude(fallbacks: readonly string[] | undefined, printed: string): boolean {
+  return fallbacks?.includes(printed) ?? false;
 }

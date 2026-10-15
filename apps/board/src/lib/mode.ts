@@ -38,7 +38,7 @@ export function scenarioParam(): string | undefined {
   return s && /^[a-z0-9-]+$/.test(s) ? s : undefined;
 }
 
-/** `?now=<ISO>` freezes the clock (fixture mode only). */
+/** `?now=<ISO>` freezes the board clock at that instant (see data/useNow.ts). */
 export function nowOverride(): string | undefined {
   const s = params().get('now');
   if (!s) return undefined;

@@ -31,7 +31,7 @@ export function Tools({ session }: { session: Session }) {
 }
 
 function useSubmit(session: Session) {
-  const { refresh } = useBoard();
+  const { refresh, setSession } = useBoard();
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; text: string } | undefined>(undefined);
   const post = async (path: string, body: unknown): Promise<boolean> => {
@@ -39,6 +39,11 @@ function useSubmit(session: Session) {
     setStatus(undefined);
     const res = await api(path, { body, token: session.token });
     setBusy(false);
+    // An expired or unknown token: back to the PIN gate.
+    if (!res.ok && res.status === 401) {
+      setSession(undefined);
+      return false;
+    }
     setStatus(res.ok ? { ok: true, text: 'saved' } : { ok: false, text: res.error });
     if (res.ok) refresh();
     return res.ok;

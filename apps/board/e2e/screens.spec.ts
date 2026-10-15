@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expectButtonsTappable, expectMinFontSize, expectNoHorizontalScroll, openBoard, screenshot } from './helpers';
 
 const PEOPLE = [
@@ -7,9 +9,18 @@ const PEOPLE = [
   { jobberUserId: 'u-test-ashby', lastName: 'ASHBY', initials: 'HA', role: 'crewLead', reviewPass: 1 },
 ];
 
-/** A stand-in for the service's identity endpoints so the signed-in REVIEW screen can be exercised without it. */
-async function mockService(page: Page): Promise<string[]> {
-  const posts: string[] = [];
+interface Call {
+  path: string;
+  body: unknown;
+  auth: string | undefined;
+}
+
+/**
+ * A stand-in for the service's identity and write endpoints so the signed-in screens can be exercised
+ * without it. Every write is recorded with its body and its Authorization header.
+ */
+async function mockService(page: Page): Promise<Call[]> {
+  const calls: Call[] = [];
   await page.route('**/api/people', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, people: PEOPLE }) }));
   await page.route('**/api/pin', async (route) => {
     const body = route.request().postDataJSON() as { userId: string; pin: string };
@@ -17,11 +28,35 @@ async function mockService(page: Page): Promise<string[]> {
     if (person && body.pin === '1234') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, token: 't-test', person }) });
     return route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'wrong PIN', attemptsLeft: 2 }) });
   });
-  await page.route('**/api/review', (route) => {
-    posts.push(route.request().postData() ?? '');
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, rowIndex: 17, deduped: false }) });
-  });
-  return posts;
+  const answers: Record<string, unknown> = {
+    review: { ok: true, rowIndex: 17, deduped: false },
+    ack: { ok: true, status: 'queued' },
+    focus: { ok: true },
+    responder: { ok: true },
+    flag: { ok: true },
+    owner: { ok: true },
+  };
+  for (const [name, answer] of Object.entries(answers)) {
+    await page.route(`**/api/${name}`, (route) => {
+      calls.push({ path: `/api/${name}`, body: route.request().postDataJSON(), auth: route.request().headers().authorization });
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(answer) });
+    });
+  }
+  return calls;
+}
+
+async function signIn(page: Page, userId: string): Promise<void> {
+  await page.getByTestId(`pin-tile-${userId}`).click();
+  for (const d of ['1', '2', '3', '4']) await page.getByTestId(`pin-key-${d}`).click();
+}
+
+const posted = (calls: Call[], path: string): Call[] => calls.filter((c) => c.path === path);
+
+/** Select a REVIEW queue card, paging the queue with its `+N more ›` tile until the card shows. */
+async function pickQueueCard(page: Page, jobId: string): Promise<void> {
+  const card = page.getByTestId(`review-job-${jobId}`);
+  for (let i = 0; i < 6 && (await card.count()) === 0; i++) await page.getByTestId('review-queue-more').click();
+  await card.click();
 }
 
 test('STAGES opens from a counts box with seven columns and the WIP cap line', async ({ page }, info) => {
@@ -36,6 +71,9 @@ test('STAGES opens from a counts box with seven columns and the WIP cap line', a
   await page.getByTestId('reveal-on-hold').click();
   await expect(page.getByTestId('stage-col-on_hold')).toContainText('ZHANG');
   await screenshot(page, info, 'stages');
+  // No city · scope line is cut.
+  const cutWhere = await page.locator('.stage-row__where .ellipsis').evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.closest('.stage-row')?.getAttribute('data-testid')));
+  expect(cutWhere).toEqual([]);
   await expectNoHorizontalScroll(page);
   await expectMinFontSize(page, 24);
   await expectButtonsTappable(page);
@@ -52,17 +90,61 @@ test('CANNOT INVOICE opens from the rail and lists 12 rows across 2 pages', asyn
   await expect(rows).toHaveCount(8);
   await expect(rows.first()).toHaveAttribute('data-testid', 'cannot-row-j-test-bauer');
   await expect(rows.first()).toContainText('NO-REMINDER');
+  // Hard red carries a word and an icon (decision 27), and the stage words are decision 31's.
+  await expect(page.getByTestId('hard-red-j-test-bauer')).toHaveText('⚠ 20+ d UNSUBMITTED');
   await expect(rows.first()).toContainText('done 23 Sep');
+  await expect(rows.first()).toContainText('submitted —');
+  await expect(rows.first()).toContainText('accepted —');
+  await expect(rows.first()).not.toContainText(/\bsent\b|\bok\b/);
+  // FIX OPEN shows its picklist item and the CREW role word, and offers no OWNER control.
+  const osei = page.getByTestId('cannot-row-j-test-osei');
+  await expect(osei).toContainText('FIX OPEN');
+  await expect(osei).toContainText('No depth marker or ruler');
+  await expect(page.getByTestId('cannot-owner-j-test-osei')).toHaveText('CREW');
+  await expect(page.getByTestId('owner-j-test-osei')).toHaveCount(0);
+  await expect(page.getByTestId('owner-j-test-price')).toHaveCount(0);
+  await expect(page.getByTestId('owner-j-test-bauer')).toBeVisible();
   await expect(page.getByTestId('cannot-page')).toHaveText('1–8 of 12');
   await screenshot(page, info, 'cannot-invoice');
   await expectNoHorizontalScroll(page);
   await expectMinFontSize(page, 24);
   await expectButtonsTappable(page);
+  // Nothing on a row is cut sideways.
+  const cut = await rows.evaluateAll((els) =>
+    els.flatMap((el) => Array.from(el.querySelectorAll<HTMLElement>('.cannot-row__top, .cannot-row__clocks')).filter((e) => e.scrollWidth > e.clientWidth + 1).map(() => el.getAttribute('data-testid'))),
+  );
+  expect(cut).toEqual([]);
+  // All eight rows of the page sit whole inside the list.
+  const fit = await page.locator('.cannot__rows').evaluate((el) => ({ zone: el.getBoundingClientRect().bottom, last: (el.lastElementChild as HTMLElement).getBoundingClientRect().bottom }));
+  expect(fit.last).toBeLessThanOrEqual(fit.zone + 1);
   await page.getByTestId('cannot-next').click();
   await expect(rows).toHaveCount(4);
   await expect(page.getByTestId('cannot-page')).toHaveText('9–12 of 12');
   await expect(rows.last()).toHaveAttribute('data-testid', 'cannot-row-j-test-lindqvist');
   await expect(page.getByTestId('cannot-next')).toBeDisabled();
+});
+
+test('OWNER on a CANNOT INVOICE row: office PIN, initials tiles, POST /api/owner, then the session ends', async ({ page }) => {
+  const calls = await mockService(page);
+  await openBoard(page, 'default');
+  await page.getByTestId('rail').click();
+  await page.getByTestId('owner-j-test-bauer').click();
+  await expect(page.getByTestId('screen-owner-pin')).toBeVisible();
+  // Only office and owner people may change a line owner.
+  await expect(page.getByTestId('pin-tile-u-test-ashby')).toHaveCount(0);
+  await signIn(page, 'u-test-office');
+  await expect(page.getByTestId('owner-picker')).toBeVisible();
+  await expect(page.getByTestId('owner-pick-A2')).toHaveCount(0);
+  await expectMinFontSize(page, 24);
+  await expectButtonsTappable(page);
+  await page.getByTestId('owner-pick-MC').click();
+  await expect(page.getByTestId('owner-note-j-test-bauer')).toContainText('saved');
+  expect(posted(calls, '/api/owner')).toEqual([{ path: '/api/owner', body: { jobId: 'j-test-bauer', initials: 'MC' }, auth: 'Bearer t-test' }]);
+  // The session ended with the write: the next OWNER asks for a PIN again.
+  await page.getByTestId('owner-j-test-farah').click();
+  await expect(page.getByTestId('screen-owner-pin')).toBeVisible();
+  await page.getByTestId('pin-cancel').click();
+  await expect(page.getByTestId('screen-cannot-invoice')).toBeVisible();
 });
 
 test('REVIEW shows the PIN pad with keys of at least 96 px', async ({ page }, info) => {
@@ -85,26 +167,63 @@ test('REVIEW shows the PIN pad with keys of at least 96 px', async ({ page }, in
   await expectMinFontSize(page, 24);
   await expectButtonsTappable(page);
   // A wrong PIN against the stubbed /api shows the sentence, never a crash.
-  await page.getByTestId('pin-tile-u-test-ashby').click();
-  for (const d of ['1', '2', '3', '4']) await page.getByTestId(`pin-key-${d}`).click();
+  await signIn(page, 'u-test-ashby');
   await expect(page.getByTestId('pin-pad')).toContainText('needs the service');
 });
 
-test('REVIEW after a PIN: the first-pass queue, both verdicts, FIX picklist, POST /api/review', async ({ page }, info) => {
-  const posts = await mockService(page);
+test('PIN lockout: the 423 message clears when the window ends', async ({ page }) => {
+  await page.clock.install();
+  await page.route('**/api/people', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, people: PEOPLE }) }));
+  let attempts = 0;
+  await page.route('**/api/pin', (route) => {
+    attempts += 1;
+    if (attempts < 3) return route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'wrong PIN', attemptsLeft: 3 - attempts }) });
+    return route.fulfill({ status: 423, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'locked for 60 s after 3 wrong PINs', lockedForSec: 60 }) });
+  });
   await openBoard(page, 'default');
   await page.getByTestId('tab-review').click();
   await page.getByTestId('pin-tile-u-test-ashby').click();
-  for (const d of ['1', '2', '3', '4']) await page.getByTestId(`pin-key-${d}`).click();
-  await expect(page.getByTestId('review-detail-j-test-carter').or(page.locator('[data-testid^="review-detail-"]').first())).toBeVisible();
+  for (let i = 0; i < 3; i++) for (const d of ['9', '9', '9', '9']) await page.getByTestId(`pin-key-${d}`).click();
+  await expect(page.getByTestId('pin-pad')).toContainText('locked · try again in');
+  await expect(page.getByTestId('pin-key-1')).toBeDisabled();
+  // Touches keep the screen (and the auto-return) alive while the lock runs out.
+  await page.clock.fastForward(40_000);
+  await page.getByTestId('pin-pad').click({ position: { x: 5, y: 5 } });
+  await page.clock.fastForward(21_000);
+  await expect(page.getByTestId('pin-key-1')).toBeEnabled();
+  await expect(page.getByTestId('pin-pad')).not.toContainText('locked');
+  await expect(page.getByTestId('pin-pad')).not.toContainText('left');
+});
+
+test('REVIEW after a PIN: the queue from the cannot-invoice lines, both verdicts, FIX picklist, POST /api/review with the token', async ({ page }, info) => {
+  const calls = await mockService(page);
+  await openBoard(page, 'default');
+  await page.getByTestId('tab-review').click();
+  await signIn(page, 'u-test-ashby');
+  await expect(page.getByTestId('review-queue')).toBeVisible();
   await expect(page.getByTestId('cutoffs')).toContainText('16:30');
   await expect(page.getByTestId('unmatched')).toContainText('STI_ATTIC_NOVAK');
   await expect(page.getByTestId('unmatched')).toContainText('no verdict shown on the wall');
-  // Henry (pass 1): jobs already READY at pass 1 are not in the queue.
+  // Henry (pass 1): the queue follows snapshot.cannotInvoice, so the leaked BAUER line (Jobber bucket
+  // Unscheduled) is first; jobs already READY at pass 1 are not in it.
+  await expect(page.locator('[data-testid^="review-job-"]').first()).toHaveAttribute('data-testid', 'review-job-j-test-bauer');
+  await expect(page.getByTestId('review-detail-j-test-bauer')).toBeVisible();
   await expect(page.getByTestId('review-job-j-test-lindqvist')).toHaveCount(0);
-  await expect(page.getByTestId('review-job-j-test-carter')).toBeVisible();
-  await page.getByTestId('review-job-j-test-carter').click();
-  await expect(page.getByTestId('review-detail-j-test-carter')).toContainText('READY');
+  await expect(page.getByTestId('review-job-j-test-ellis')).toHaveCount(0);
+  // A non-default card: OSEI's detail replaces BAUER's; the human card shows Henry's FIX with his initials.
+  await pickQueueCard(page, 'j-test-osei');
+  await expect(page.getByTestId('review-detail-j-test-osei')).toBeVisible();
+  await expect(page.getByTestId('review-detail-j-test-bauer')).toHaveCount(0);
+  await expect(page.getByTestId('verdict-human')).toContainText('Latest human · 1st pass');
+  await expect(page.getByTestId('verdict-human')).toContainText('FIX');
+  await expect(page.getByTestId('verdict-human')).toContainText('No depth marker or ruler');
+  await expect(page.getByTestId('verdict-human')).toContainText('· HA');
+  // CARTER: the overnight checker's READY with its note; no human row yet.
+  await pickQueueCard(page, 'j-test-carter');
+  await expect(page.getByTestId('review-detail-j-test-carter')).toBeVisible();
+  await expect(page.getByTestId('verdict-checker')).toContainText('READY');
+  await expect(page.getByTestId('verdict-checker')).toContainText('All 9 photo types present');
+  await expect(page.getByTestId('verdict-human')).toContainText('no row');
   for (const id of ['verdict-ready', 'verdict-fix', 'verdict-hold']) {
     const box = await page.getByTestId(id).boundingBox();
     expect(box?.width).toBe(160);
@@ -118,30 +237,98 @@ test('REVIEW after a PIN: the first-pass queue, both verdicts, FIX picklist, POS
   await expect(page.getByTestId('fix-pick')).toHaveCount(12);
   await page.getByTestId('fix-pick').nth(1).click();
   await expect(page.getByTestId('review-status')).toContainText('saved');
-  expect(posts).toHaveLength(1);
-  expect(JSON.parse(posts[0] ?? '{}')).toEqual({ jobId: 'j-test-carter', pass: 1, verdict: 'FIX', fixPick: 'No depth marker or ruler' });
+  expect(posted(calls, '/api/review')).toEqual([
+    { path: '/api/review', body: { jobId: 'j-test-carter', pass: 1, verdict: 'FIX', fixPick: 'No depth marker or ruler' }, auth: 'Bearer t-test' },
+  ]);
   // Ashby is a crew lead: no FLAG / FOCUS / RESPONDER tools.
   await expect(page.getByTestId('tools')).toHaveCount(0);
 });
 
-test('REVIEW as the owner: pass-2 READY waits for a 1st pass READY; office tools present', async ({ page }) => {
+test('REVIEW: a reviewer missing from the roster prints ?, never the viewer\'s initials', async ({ page }, info) => {
   await mockService(page);
+  const file = join(info.project.testDir, '..', '..', '..', 'fixtures', 'snapshots', 'default.json');
+  const snap = JSON.parse(readFileSync(file, 'utf8')) as { people: Array<{ jobberUserId: string }> };
+  snap.people = snap.people.filter((p) => p.jobberUserId !== 'u-test-ashby');
+  await page.route('**/snapshots/default.json', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(snap) }));
   await openBoard(page, 'default');
   await page.getByTestId('tab-review').click();
-  await page.getByTestId('pin-tile-u-test-owner').click();
-  for (const d of ['1', '2', '3', '4']) await page.getByTestId(`pin-key-${d}`).click();
+  await signIn(page, 'u-test-owner');
+  await pickQueueCard(page, 'j-test-osei');
+  await expect(page.getByTestId('verdict-human')).toContainText('FIX');
+  await expect(page.getByTestId('verdict-human')).toContainText('· ?');
+  await expect(page.getByTestId('verdict-human')).not.toContainText('JT');
+});
+
+test('REVIEW as the owner: pass-2 READY waits for a 1st pass READY; HOLD needs a reason and posts it', async ({ page }) => {
+  const calls = await mockService(page);
+  await openBoard(page, 'default');
+  await page.getByTestId('tab-review').click();
+  await signIn(page, 'u-test-owner');
   await expect(page.getByTestId('tools')).toBeVisible();
   // OSEI: pass-1 FIX → pass-2 READY disabled with the words.
-  await page.getByTestId('review-job-j-test-osei').click();
+  await pickQueueCard(page, 'j-test-osei');
   await expect(page.getByTestId('verdict-ready')).toBeDisabled();
   await expect(page.getByTestId('review-detail-j-test-osei')).toContainText('needs 1st pass READY');
   // ELLIS: pass-1 READY → pass-2 READY enabled.
-  await page.getByTestId('review-job-j-test-ellis').click();
+  await pickQueueCard(page, 'j-test-ellis');
   await expect(page.getByTestId('verdict-ready')).toBeEnabled();
-  await page.getByTestId('tool-flag').click();
-  await expect(page.getByTestId('flag-form')).toBeVisible();
+  await page.getByTestId('verdict-hold').click();
+  await expect(page.getByTestId('hold-form')).toBeVisible();
+  await expect(page.getByTestId('hold-save')).toBeDisabled();
+  await page.getByLabel('hold reason').fill('   ');
+  await expect(page.getByTestId('hold-save')).toBeDisabled();
+  await page.getByLabel('hold reason').fill('  waiting on the utility rebate form  ');
+  await page.getByTestId('hold-save').click();
+  await expect(page.getByTestId('review-status')).toContainText('saved');
+  expect(posted(calls, '/api/review')).toEqual([
+    { path: '/api/review', body: { jobId: 'j-test-ellis', pass: 2, verdict: 'HOLD', holdReason: 'waiting on the utility rebate form' }, auth: 'Bearer t-test' },
+  ]);
   await expectMinFontSize(page, 24);
   await expectButtonsTappable(page);
+});
+
+test('office tools: FOCUS, RESPONDER and FLAG post their bodies with the token', async ({ page }) => {
+  const calls = await mockService(page);
+  await openBoard(page, 'default');
+  await page.getByTestId('tab-review').click();
+  await signIn(page, 'u-test-office');
+  await expect(page.getByTestId('tools')).toBeVisible();
+
+  await page.getByTestId('tool-focus').click();
+  await page.locator('#focus-text').fill('');
+  await page.locator('#focus-text').pressSequentially('call the inspector before the crew leaves today');
+  await page.getByTestId('focus-save').click();
+  await expect(page.getByTestId('focus-form')).toContainText('saved');
+  const focus = posted(calls, '/api/focus');
+  expect(focus).toHaveLength(1);
+  const text = (focus[0]?.body as { text: string }).text;
+  expect(text).toBe('CALL THE INSPECTOR BEFORE THE');
+  expect(text.length).toBeLessThanOrEqual(30);
+  expect(focus[0]?.auth).toBe('Bearer t-test');
+
+  await page.getByTestId('tool-responder').click();
+  await page.getByRole('button', { name: 'responder TESTINTAKE' }).click();
+  await expect(page.getByTestId('responder-form')).toContainText('saved');
+  expect(posted(calls, '/api/responder')).toEqual([{ path: '/api/responder', body: { initials: 'KA' }, auth: 'Bearer t-test' }]);
+
+  await page.getByTestId('tool-flag').click();
+  await expect(page.getByTestId('flag-save')).toBeDisabled();
+  await page.getByRole('button', { name: 'issue Improper Install' }).click();
+  await page.getByTestId('flag-form').getByLabel('Employee').fill('  ASHBY-2 ');
+  await page.getByTestId('flag-form').getByLabel('Job number').fill('9001');
+  await page.getByRole('button', { name: 'crew ASHBY' }).click();
+  await page.getByTestId('flag-form').getByLabel('Notes').fill('baffles missing at the north eave');
+  await expect(page.getByTestId('flag-save')).toBeDisabled();
+  await page.getByRole('button', { name: 'RR yes' }).click();
+  await page.getByTestId('flag-save').click();
+  await expect(page.getByTestId('flag-form')).toContainText('saved');
+  expect(posted(calls, '/api/flag')).toEqual([
+    {
+      path: '/api/flag',
+      body: { issue: 'Improper Install', jobNumber: 9001, employee: 'ASHBY-2', crewOnReport: 'ASHBY', notes: 'baffles missing at the north eave', rr: 'Y' },
+      auth: 'Bearer t-test',
+    },
+  ]);
 });
 
 test('SCORECARD after a PIN: one row per week, dashes for missing feeds, no targets', async ({ page }, info) => {
@@ -149,8 +336,7 @@ test('SCORECARD after a PIN: one row per week, dashes for missing feeds, no targ
   await openBoard(page, 'monday-scorecard');
   await page.getByTestId('tab-scorecard').click();
   await expect(page.getByTestId('screen-scorecard')).toBeVisible();
-  await page.getByTestId('pin-tile-u-test-owner').click();
-  for (const d of ['1', '2', '3', '4']) await page.getByTestId(`pin-key-${d}`).click();
+  await signIn(page, 'u-test-owner');
   await expect(page.locator('[data-testid^="scorecard-row-"]')).toHaveCount(13);
   await expect(page.getByTestId('screen-scorecard')).toContainText('—');
   await expect(page.getByTestId('screen-scorecard')).not.toContainText(/target/i);
@@ -161,22 +347,25 @@ test('SCORECARD after a PIN: one row per week, dashes for missing feeds, no targ
   await expectButtonsTappable(page);
 });
 
-test('ACK on a Problem card asks for a PIN, then POSTs /api/ack and shows the outcome on the card', async ({ page }) => {
-  await mockService(page);
-  const acks: unknown[] = [];
-  await page.route('**/api/ack', (route) => {
-    acks.push({ body: route.request().postDataJSON(), auth: route.request().headers().authorization });
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, status: 'queued' }) });
-  });
+test('ACK on a Problem card asks for a PIN, then POSTs /api/ack, shows the outcome, and the session ends', async ({ page }) => {
+  const calls = await mockService(page);
   await openBoard(page, 'default');
   await page.getByTestId('ack-v-test-nguyen-1').click();
   await expect(page.getByTestId('screen-ack-pin')).toBeVisible();
   await expect(page.getByTestId('screen-today')).toHaveCount(0);
-  await page.getByTestId('pin-tile-u-test-office').click();
-  for (const d of ['1', '2', '3', '4']) await page.getByTestId(`pin-key-${d}`).click();
+  // Only office and owner people may ACK.
+  await expect(page.getByTestId('pin-tile-u-test-ashby')).toHaveCount(0);
+  await signIn(page, 'u-test-office');
   await expect(page.getByTestId('screen-today')).toBeVisible();
   await expect(page.getByTestId('ack-note-v-test-nguyen-1')).toHaveText('queued');
-  expect(acks).toEqual([{ body: { visitId: 'v-test-nguyen-1' }, auth: 'Bearer t-test' }]);
+  expect(posted(calls, '/api/ack')).toEqual([{ path: '/api/ack', body: { visitId: 'v-test-nguyen-1' }, auth: 'Bearer t-test' }]);
+  // The office token does not linger: the next ACK and REVIEW both ask for a PIN.
+  await page.getByTestId('ack-v-test-nguyen-1').click();
+  await expect(page.getByTestId('screen-ack-pin')).toBeVisible();
+  await page.getByTestId('pin-cancel').click();
+  await page.getByTestId('tab-review').click();
+  await expect(page.getByTestId('pin-pad')).toBeVisible();
+  expect(posted(calls, '/api/ack')).toHaveLength(1);
 });
 
 test('ACK without the service shows the sentence and never crashes', async ({ page }) => {
@@ -196,6 +385,63 @@ test('auto-return: STAGES goes back to TODAY after 60 s without a touch', async 
   await page.clock.fastForward(61_000);
   await expect(page.getByTestId('screen-today')).toBeVisible();
   await expect(page.getByTestId('screen-stages')).toHaveCount(0);
+});
+
+test.describe('the PIN session ends on every exit route', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install();
+    await mockService(page);
+    await openBoard(page, 'default');
+    await page.getByTestId('tab-review').click();
+    await signIn(page, 'u-test-ashby');
+    await expect(page.getByTestId('review-queue')).toBeVisible();
+  });
+
+  test('← TODAY', async ({ page }) => {
+    await page.getByTestId('screen-review').getByRole('button', { name: 'back to today' }).click();
+    await expect(page.getByTestId('screen-today')).toBeVisible();
+    await page.getByTestId('tab-review').click();
+    await expect(page.getByTestId('pin-pad')).toBeVisible();
+  });
+
+  test('a tab to another screen', async ({ page }) => {
+    await page.getByTestId('tab-stages').click();
+    await expect(page.getByTestId('screen-stages')).toBeVisible();
+    await page.getByTestId('tab-review').click();
+    await expect(page.getByTestId('pin-pad')).toBeVisible();
+  });
+
+  test('the TODAY tab', async ({ page }) => {
+    await page.getByTestId('tab-today').click();
+    await page.getByTestId('tab-scorecard').click();
+    await expect(page.getByTestId('pin-pad')).toBeVisible();
+  });
+
+  test('lock', async ({ page }) => {
+    await page.getByTestId('lock').click();
+    await expect(page.getByTestId('pin-pad')).toBeVisible();
+  });
+
+  test('auto-return after 60 s idle', async ({ page }) => {
+    await page.clock.fastForward(61_000);
+    await expect(page.getByTestId('screen-today')).toBeVisible();
+    await page.getByTestId('tab-review').click();
+    await expect(page.getByTestId('pin-pad')).toBeVisible();
+  });
+
+  test('touches restart the 60 s clock', async ({ page }) => {
+    await page.clock.fastForward(50_000);
+    await pickQueueCard(page, 'j-test-osei');
+    await page.clock.fastForward(50_000);
+    await expect(page.getByTestId('screen-review')).toBeVisible();
+    await expect(page.getByTestId('review-detail-j-test-osei')).toBeVisible();
+    await expect(page.getByTestId('pin-pad')).toHaveCount(0);
+    await page.keyboard.press('Shift');
+    await page.clock.fastForward(50_000);
+    await expect(page.getByTestId('pin-pad')).toHaveCount(0);
+    await page.clock.fastForward(11_000);
+    await expect(page.getByTestId('screen-today')).toBeVisible();
+  });
 });
 
 test('taps are posted to /api/tap on tab changes and zone taps', async ({ page }) => {

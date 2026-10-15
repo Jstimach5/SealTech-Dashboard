@@ -26,7 +26,15 @@ export interface LaneCard {
   visit: Visit;
   job: Job;
   state: CardState;
+  /** Decision 41: Problem, no ACK, 15 minutes or more since the result (the red border). */
   ackOverdue: boolean;
+  /** Decision 41: Problem with no ACK yet (the ACK button shows from the first minute). */
+  needsAck: boolean;
+}
+
+/** A Problem visit that has no ACK line yet. */
+export function needsAck(visit: Visit): boolean {
+  return visit.result === 'Problem' && visit.ack === undefined;
 }
 
 export interface Lane {
@@ -74,14 +82,18 @@ function toCard(visit: Visit, jobs: Map<string, Job>, verdicts: Record<string, J
     pass2Ready: v?.pass2Ready ?? false,
     now,
   });
-  return { visit, job, state, ackOverdue: problemAckOverdue(visit, now) };
+  return { visit, job, state, ackOverdue: problemAckOverdue(visit, now), needsAck: needsAck(visit) };
 }
 
 /**
- * The NOW card: the visit in progress by the clock (started, not complete, not DONE; the latest if
- * several), else the next not-started one, else the latest finished card that is not DONE, else the last card.
+ * The NOW card: an un-ACKed Problem first (decision 41: it stays the NOW card, with its ACK button
+ * and, after 15 minutes, its red border, until an ACK line lands; the earliest if several), else the
+ * visit in progress by the clock (started, not complete, not DONE; the latest if several), else the
+ * next not-started one, else the latest finished card that is not DONE, else the last card.
  */
 export function pickNow(cards: LaneCard[], now: Instant): LaneCard | undefined {
+  const problem = cards.find((c) => c.needsAck);
+  if (problem) return problem;
   const t = toDate(now).getTime();
   const open = cards.filter((c) => toDate(c.visit.startAt).getTime() <= t && !c.visit.isComplete && c.state.kind !== 'DONE');
   if (open.length > 0) return open[open.length - 1];

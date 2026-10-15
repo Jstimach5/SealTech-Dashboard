@@ -208,6 +208,9 @@ textarea {
 .tag--move {
   color: var(--move);
 }
+.tag--case {
+  text-transform: none;
+}
 .tag--lower {
   text-transform: none;
   letter-spacing: 0;

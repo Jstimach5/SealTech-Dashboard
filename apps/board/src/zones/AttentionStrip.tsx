@@ -1,6 +1,6 @@
 /** NEEDS ATTENTION: Jobber's own Late / Action required / Requires invoicing lines (decision 29), oldest first within kind. */
 import { useRef } from 'react';
-import { BUCKET_LABEL, CONFIG, ownerText } from '@sealtech/domain';
+import { BUCKET_LABEL, CHIP, CONFIG, ownerText, type AttentionBucket } from '@sealtech/domain';
 import { useBoard } from '../context';
 import { splitLabel } from '../lib/format';
 import { FitText } from '../ui/FitText';
@@ -8,6 +8,16 @@ import { clipRows, useFitRows } from '../ui/useFitRows';
 
 const ROW = 46;
 const GAP = 4;
+
+/**
+ * The trigger word, tier C shrink-to-fit. LATE is red, so it carries its icon (decision 27).
+ * REQUIRES INVOICING never drops below 32 px: where it cannot fit it prints REQ. INVOICING.
+ */
+const WORD: Record<AttentionBucket, { text: string; min: number; fallbacks?: string[] }> = {
+  late: { text: `${CHIP.LATE.icon} ${BUCKET_LABEL.late}`, min: 24 },
+  action_required: { text: BUCKET_LABEL.action_required, min: 24 },
+  requires_invoicing: { text: BUCKET_LABEL.requires_invoicing, min: 32, fallbacks: ['REQ. INVOICING'] },
+};
 
 export function AttentionStrip() {
   const { snapshot } = useBoard();
@@ -27,7 +37,7 @@ export function AttentionStrip() {
           return (
             <div key={line.jobId} className="attention__row" data-testid={`attention-row-${line.jobId}`} data-kind={line.kind}>
               <span className={`attention__word attention__word--${line.kind}`}>
-                <FitText text={BUCKET_LABEL[line.kind]} max={42} min={24} className="bold caps" style={{ textAlign: 'center' }} />
+                <FitText text={WORD[line.kind].text} max={42} min={WORD[line.kind].min} fallbacks={WORD[line.kind].fallbacks} className="bold caps" style={{ textAlign: 'center' }} />
               </span>
               <span className="attention__label tier-c">
                 <b>{lastName}</b>
