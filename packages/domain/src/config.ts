@@ -6,10 +6,11 @@ export const CONFIG = {
   RED_DAYS: 7,
   /** Hard red when this many days since completion with no Vault submission. Provisional (decision 31). */
   HARD_RED_DAYS: 20,
-  /** A visit with no result this many minutes after its scheduled end shows NO RESULT. */
+  /**
+   * Grace after a visit's scheduled end: the card stays NOW and the visit is not yet counted as
+   * unanswered. After it, an open visit reads LATE and a complete one with no answer counts as unanswered.
+   */
   NO_RESULT_GRACE_MIN: 30,
-  /** A visit with no result this many minutes after its scheduled start shows the red NOT STARTED word. */
-  NOT_STARTED_MIN: 45,
   /** A Problem without an acknowledgement for this many minutes gets the red border (decision 41). */
   ACK_MIN: 15,
   /** Footer dot amber after this many minutes since the last successful load. */

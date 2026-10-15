@@ -32,8 +32,8 @@ export const BUCKET_LABEL: Record<Bucket, string> = {
 export const ATTENTION_BUCKETS = ['late', 'action_required', 'requires_invoicing'] as const;
 export type AttentionBucket = (typeof ATTENTION_BUCKETS)[number];
 
-/** Program classification. Blank or unknown title token = program work (fail-closed). */
-export const PROGRAMS = ['CE_INSULATION', 'CE_HVAC', 'STANDARD'] as const;
+/** Program classification. Blank or unknown title token = `PROGRAM` (fail-closed: treated as program work). */
+export const PROGRAMS = ['CE_INSULATION', 'CE_HVAC', 'STANDARD', 'PROGRAM'] as const;
 export type Program = (typeof PROGRAMS)[number];
 
 /** Scope codes shown on cards: LASTNAME · CITY · SCOPE. */
@@ -140,19 +140,28 @@ export const ISSUE_TO_FLAG: Record<IssueType, { type: 'Compliance' | 'Improper I
 export const OWNER_ROLES = ['CREW', 'OFFICE'] as const;
 export type OwnerRole = (typeof OWNER_ROLES)[number];
 
-/** Card status chips: every chip is a word AND an icon (red never alone). */
-export const CHIP: Record<VisitResult | 'AWAITING REVIEW' | 'READY' | 'NO RESULT' | 'NOT STARTED' | 'NOW' | 'DONE', { icon: string; tone: 'grey' | 'red' | 'blue' | 'green' | 'amber' | 'brand' }> = {
+/** Chip tones map onto the house palette (decision 27): red = act, blue = move, green = automatic, amber = exception. */
+export type ChipTone = 'grey' | 'red' | 'blue' | 'green' | 'amber' | 'brand';
+
+/** Every word a card chip can show. The six Visit results as Jobber spells them, plus the house words. */
+export type ChipWord = VisitResult | 'NOT STARTED' | 'NOW' | 'LATE' | 'NO RESULT' | 'AWAITING REVIEW' | 'FIX' | 'HOLD' | 'READY' | 'DONE';
+
+/** Card status chips: every chip is a word AND an icon (red never alone). Single source for icon and tone. */
+export const CHIP: Record<ChipWord, { icon: string; tone: ChipTone }> = {
   Completed: { icon: '✓', tone: 'grey' },
   'Return needed': { icon: '↩', tone: 'blue' },
   Prepped: { icon: '◐', tone: 'grey' },
   'Not started': { icon: '○', tone: 'grey' },
   'Customer cancelled': { icon: '✕', tone: 'blue' },
   Problem: { icon: '⚠', tone: 'red' },
-  'AWAITING REVIEW': { icon: '◔', tone: 'grey' },
-  READY: { icon: '✓✓', tone: 'green' },
-  'NO RESULT': { icon: '◌', tone: 'amber' },
-  'NOT STARTED': { icon: '○', tone: 'red' },
+  'NOT STARTED': { icon: '○', tone: 'grey' },
   NOW: { icon: '●', tone: 'brand' },
+  LATE: { icon: '⚠', tone: 'red' },
+  'NO RESULT': { icon: '◌', tone: 'amber' },
+  'AWAITING REVIEW': { icon: '◔', tone: 'grey' },
+  FIX: { icon: '✎', tone: 'amber' },
+  HOLD: { icon: '❚❚', tone: 'amber' },
+  READY: { icon: '✓✓', tone: 'green' },
   DONE: { icon: '✓✓', tone: 'grey' },
 };
 
