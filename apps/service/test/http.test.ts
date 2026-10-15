@@ -439,7 +439,7 @@ describe('restart', () => {
     expect(h.service.db.reviewRowCount()).toBe(1);
     src.fail = false;
     await h.service.poll({ quiet: true });
-    expect(h.snapshot().focusLine).toBe('STORED ANYWAY');
+    expect(h.snapshot().focusLine).toBe('stored anyway');
   });
 });
 
