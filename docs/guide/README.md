@@ -1,5 +1,7 @@
 # Production board guide
 
+> **Out of date since revision G (Oct 15).** The PDF pictures the old TODAY screen (strip, lanes, rail, counts). Its TODAY, huddle and ACK pages must be re-captured against the new wall before it is handed to staff; `capture.cjs` still drives the old test ids (`rail`, `counts-*`, `card-*`) and needs the new ones (`money`, `row-*`, `answer`). The other pages (Review, office tools, Scorecard, keeping it running) still match.
+
 `SealTech_Production_Board_Guide.pdf` is the 16-page staff guide (v1.0, Oct 2026) in the house SOP style: cover, what we built, rules, one page per pathway (huddle, cannot invoice, review, ACK, office tools, scorecard, keep it running), day and week, troubleshooting, what comes next.
 
 ## Rebuild it

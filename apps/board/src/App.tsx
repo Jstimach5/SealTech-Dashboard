@@ -11,7 +11,7 @@ import { BoardContext, type Board, type Screen } from './context';
 import { api, postTap } from './data/api';
 import { useNow } from './data/useNow';
 import { useSnapshot } from './data/useSnapshot';
-import { kioskMode, wallForced } from './lib/mode';
+import { DEMO_BUILD, kioskMode, wallForced } from './lib/mode';
 import type { Session } from './pin/usePin';
 import { CannotInvoice } from './screens/CannotInvoice';
 import { PinGate } from './screens/PinGate';
@@ -27,6 +27,8 @@ const OFFICE_ROLES: ReadonlySet<string> = new Set(['office', 'owner']);
 
 /** Revision G: the wall layout only where it fits (≥ 1900×1060 CSS px) or when forced with `?wall=1`. */
 function wallFits(): boolean {
+  // The hosted demo shows the wall scaled down on any desktop-width window, the list on a phone.
+  if (DEMO_BUILD) return wallForced() || window.innerWidth >= 900;
   return wallForced() || (window.innerWidth >= 1900 && window.innerHeight >= 1060);
 }
 
@@ -39,7 +41,7 @@ function useLayout(): 'wall' | 'compact' {
   useEffect(() => {
     const apply = () => {
       setLayout(wallFits() ? 'wall' : 'compact');
-      const s = wallForced() ? 1 : Math.min(1, window.innerWidth / 1920, window.innerHeight / 1080);
+      const s = Math.min(1, window.innerWidth / 1920, window.innerHeight / 1080);
       document.documentElement.style.setProperty('--scale', String(Number.isFinite(s) && s > 0 ? s : 1));
     };
     apply();

@@ -35,12 +35,19 @@ export function scenarioParam(): string | undefined {
       s = null;
     }
   }
+  // `#wall-default` = the default scenario forced onto the wall layout (hosts that keep only a bare hash).
+  if (s && s.startsWith('wall')) s = s.replace(/^wall-?/, '');
   return s && /^[a-z0-9-]+$/.test(s) ? s : undefined;
 }
 
 /** `?wall=1` forces the wall layout on any window (a laptop driving a TV for the read test). */
 export function wallForced(): boolean {
-  return params().get('wall') === '1';
+  if (params().get('wall') === '1') return true;
+  try {
+    return window.location.hash.startsWith('#wall');
+  } catch {
+    return false;
+  }
 }
 
 /** `?now=<ISO>` freezes the board clock at that instant (see data/useNow.ts). */
