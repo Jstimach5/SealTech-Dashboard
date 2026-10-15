@@ -1827,7 +1827,7 @@
       "sinceSource": "observed",
       "ageDays": 12,
       "owner": {
-        "initials": "JA"
+        "role": "OFFICE"
       }
     },
     {
@@ -1849,7 +1849,7 @@
       "sinceSource": "observed",
       "ageDays": 5,
       "owner": {
-        "initials": "JA"
+        "role": "CREW"
       }
     },
     {
@@ -1882,7 +1882,7 @@
       "sinceSource": "observed",
       "ageDays": 2,
       "owner": {
-        "initials": "JA"
+        "initials": "MC"
       }
     },
     {
@@ -1893,7 +1893,7 @@
       "sinceSource": "observed",
       "ageDays": 2,
       "owner": {
-        "initials": "JA"
+        "initials": "AB"
       }
     },
     {
@@ -1937,7 +1937,7 @@
       "sinceSource": "observed",
       "ageDays": 0,
       "owner": {
-        "initials": "JA"
+        "initials": "MC"
       }
     }
   ],

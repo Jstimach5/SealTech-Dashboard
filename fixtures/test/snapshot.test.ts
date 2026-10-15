@@ -188,3 +188,14 @@ describe('scenario overlays', () => {
     expect(s.scorecard.at(-1)?.weekStart).toBe('2026-10-12');
   });
 });
+
+describe('owners agree between the strip and the rail', () => {
+  it('a Requires invoicing strip line names the rail line owner (PRICE HOLD → OFFICE, OSEI FIX → CREW)', () => {
+    for (const a of snap.attention.filter((x) => x.kind === 'requires_invoicing')) {
+      const l = snap.cannotInvoice.find((c) => c.jobId === a.jobId);
+      if (l) expect(a.owner).toEqual(l.owner);
+    }
+    expect(snap.attention.find((a) => a.jobId === 'j-test-price')?.owner).toEqual({ role: 'OFFICE' });
+    expect(snap.attention.find((a) => a.jobId === 'j-test-osei')?.owner).toEqual({ role: 'CREW' });
+  });
+});

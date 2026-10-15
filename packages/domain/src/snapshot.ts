@@ -109,18 +109,6 @@ export function buildSnapshot(inputs: SourceInputs, options: BuildOptions = {}):
   );
   const unmatchedReviewRows = reviewRows.filter((r) => r.match === 'none').length;
 
-  // 4. attention
-  const ownerFor = (job: Job, kind: AttentionBucket): Owner =>
-    defaultOwner({
-      attentionKind: kind,
-      job,
-      visits: resolvedVisitsByJob.get(job.id) ?? [],
-      crews: inputs.crews,
-      people: inputs.people,
-      ...(inputs.ownerOverrides[job.id] ? { override: inputs.ownerOverrides[job.id] } : {}),
-    });
-  const attention = attentionLines(jobs, bucketSeen, now, ownerFor);
-
   // 5. cannot-invoice rail. An invoiced job is done, whatever bucket Jobber still shows it in
   //    (the hero keeps Jobber's own count, decision 32; the list only shows what SealTech cannot bill).
   const cannotInvoice: CannotInvoiceLine[] = cannotInvoiceCandidates(jobs)
@@ -140,6 +128,21 @@ export function buildSnapshot(inputs: SourceInputs, options: BuildOptions = {}):
       return buildCannotInvoiceLine({ job, visits: jobVisits, rows, now, owner, tags: leakTags(job) });
     })
     .sort(compareRailLines);
+
+  // 4. attention (after the rail: a Requires invoicing line names the same owner as the job's rail line,
+  //    so FIX / HOLD jobs show the role word there too, decisions 16 and 33)
+  const railOwner = new Map(cannotInvoice.map((l) => [l.jobId, l.owner]));
+  const ownerFor = (job: Job, kind: AttentionBucket): Owner =>
+    (kind === 'requires_invoicing' ? railOwner.get(job.id) : undefined) ??
+    defaultOwner({
+      attentionKind: kind,
+      job,
+      visits: resolvedVisitsByJob.get(job.id) ?? [],
+      crews: inputs.crews,
+      people: inputs.people,
+      ...(inputs.ownerOverrides[job.id] ? { override: inputs.ownerOverrides[job.id] } : {}),
+    });
+  const attention = attentionLines(jobs, bucketSeen, now, ownerFor);
 
   // 6. numbers
   const byReason: Partial<Record<Reason, number>> = {};
