@@ -14,7 +14,7 @@ import { isSameLocalDay, minutesBetween } from './time.js';
 export type CardStateKind =
   | 'NOT STARTED'
   | 'NOW'
-  | 'LATE'
+  | 'STILL OPEN'
   | 'RESULT'
   | 'NO RESULT'
   | 'AWAITING REVIEW'
@@ -62,7 +62,7 @@ function noResultChip(): Chip {
 /**
  * Timeline for a visit that has no result and is not complete, by the clock:
  * NOT STARTED (grey, before start) → NOW (from start until CONFIG.NO_RESULT_GRACE_MIN past the scheduled
- * end, because visits run over) → LATE (red ⚠: the scheduled end plus grace has passed and Jobber still
+ * end, because visits run over) → STILL OPEN (red ⚠: the scheduled end plus grace has passed and Jobber still
  * shows the visit open; this is the card's early warning before Jobber's own Late bucket fires).
  * Jobber gives no "crew arrived" signal (decision 48 kept live clock-ins out of v1), so the card never
  * claims a visit has not started once its start time has passed; a red word that fires on every
@@ -73,7 +73,7 @@ function pendingChip(visit: Visit, now: Instant): Chip {
   const sinceEnd = minutesBetween(visit.endAt, now);
   if (sinceStart < 0) return chip('NOT STARTED', 'NOT STARTED', CHIP['NOT STARTED']);
   if (sinceEnd <= CONFIG.NO_RESULT_GRACE_MIN) return chip('NOW', 'NOW', CHIP.NOW);
-  return chip('LATE', 'LATE', CHIP.LATE);
+  return chip('STILL OPEN', 'STILL OPEN', CHIP['STILL OPEN']);
 }
 
 /** Decision 10: the chip word is the crew's own Visit result; icon and tone come from enums.CHIP. */

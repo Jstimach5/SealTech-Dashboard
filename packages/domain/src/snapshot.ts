@@ -48,10 +48,11 @@ export interface BuildOptions {
   skipValidation?: boolean;
 }
 
-export function buildSnapshot(inputs: SourceInputs, options: BuildOptions = {}): Snapshot {
+export function buildSnapshot(rawInputs: SourceInputs, options: BuildOptions = {}): Snapshot {
+  const inputs = dropFuture(rawInputs);
   const now = inputs.now;
   const boardDate = localDate(now);
-  const yesterday = addLocalDays(boardDate, -1);
+  const yesterday = lastWorkedDay(inputs.visits, boardDate);
   const bucketSeen = options.bucketSeen ?? bucketSeenFromJobs(inputs.jobs);
 
   // 1. jobs
@@ -163,7 +164,14 @@ export function buildSnapshot(inputs: SourceInputs, options: BuildOptions = {}):
   };
 
   const kept = planKept(visitsYesterday);
-  const scoreline = { ...kept, firstPassReady: firstPassReady(reviewRows, weekStartMonday(boardDate)) };
+  const thisWeek = firstPassReady(reviewRows, weekStartMonday(boardDate));
+  const lastWeek = thisWeek ? null : firstPassReady(reviewRows, addLocalDays(weekStartMonday(boardDate), -7));
+  const scoreline = {
+    ...kept,
+    firstPassReady: thisWeek ?? lastWeek,
+    day: yesterday,
+    ...(thisWeek ? { firstPassWeek: 'this' as const } : lastWeek ? { firstPassWeek: 'last' as const } : {}),
+  };
 
   const unanswered = unansweredCount(
     visits.filter((v) => localDate(v.startAt) === boardDate || localDate(v.startAt) === yesterday),
@@ -224,6 +232,48 @@ export function buildSnapshot(inputs: SourceInputs, options: BuildOptions = {}):
     if (offenders.length) throw new Error(`Snapshot contains private text (decision 4):\n${offenders.join('\n')}`);
   }
   return snapshot;
+}
+
+/**
+ * The last worked day: the most recent local date before today that has a visit (Monday's wall reads
+ * Saturday or Sunday when crews worked then, else Friday). Falls back to the calendar yesterday.
+ */
+export function lastWorkedDay(visits: Visit[], boardDate: string): string {
+  let best: string | undefined;
+  for (const v of visits) {
+    const d = localDate(v.startAt);
+    if (d < boardDate && (!best || d > best)) best = d;
+  }
+  return best ?? addLocalDays(boardDate, -1);
+}
+
+/**
+ * Clock-skew and fixture guard: nothing dated after `now` exists yet. Review rows reviewed later, note
+ * lines written later, form answers and recaps given later are dropped; a visit or job completed later is
+ * not complete yet. One guard here, so no rule needs its own.
+ */
+export function dropFuture(inputs: SourceInputs): SourceInputs {
+  const t = toDate(inputs.now).getTime();
+  const after = (i: string | undefined) => i !== undefined && toDate(i).getTime() > t;
+  const keepRecord = <T extends { at: string }>(rec: Record<string, T>): Record<string, T> =>
+    Object.fromEntries(Object.entries(rec).filter(([, v]) => !after(v.at)));
+  return {
+    ...inputs,
+    jobs: inputs.jobs.map((j) => {
+      const out: Job = { ...j, noteLines: j.noteLines.filter((n) => !after(n.at)) };
+      if (after(j.completedAt)) delete out.completedAt;
+      return out;
+    }),
+    visits: inputs.visits.map((v) => {
+      if (!after(v.completedAt)) return v;
+      const out: Visit = { ...v, isComplete: false };
+      delete out.completedAt;
+      return out;
+    }),
+    reviewRows: inputs.reviewRows.filter((r) => !after(r.reviewedAt)),
+    formAnswers: keepRecord(inputs.formAnswers),
+    queuedRecaps: keepRecord(inputs.queuedRecaps),
+  };
 }
 
 /**

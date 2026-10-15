@@ -83,7 +83,7 @@ function StageColumn({
       <header className="stage-col__head">
         <span className="tier-d caps bold muted stage-col__label">{BUCKET_LABEL[bucket]}</span>
         <span className={`tier-c bold ${red ? 'act' : ''}`} data-testid={`stage-count-${bucket}`}>
-          {red ? `${CHIP.LATE.icon} ${count}` : count}
+          {red ? `${CHIP['STILL OPEN'].icon} ${count}` : count}
         </span>
       </header>
       <div className="stage-col__rows" ref={ref}>

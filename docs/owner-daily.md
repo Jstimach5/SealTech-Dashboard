@@ -8,7 +8,7 @@ What Jack (board owner, decision 38) does so the board stays true. Everything he
 |---|---|---|
 | 06:55 | Glance at the footer dots on the way to the huddle. Red Jobber dot → the service log on the office PC (`C:\SealTech\board\logs`). | Wall |
 | 07:00 | Run the huddle (`huddle-card.md`). | Wall |
-| 07:10 | Jamie types the focus line for the day (≤ 30 characters) and sets today's responder (the office person who answers a crew `Problem` within 15 minutes, decision 41). | REVIEW 🔒 → FOCUS / RESPONDER |
+| 06:55 | Jamie types the focus line for the day (≤ 30 characters, typed as it should read) and sets today's responder before the huddle starts (the office person who answers a crew `Problem` within 15 minutes, decision 41). | REVIEW 🔒 → FOCUS / RESPONDER |
 | During the day | A `Problem` card with a red border means 15 minutes passed with no ACK. The responder taps ACK after calling the crew. One text goes to Jack if nobody does. | Wall / phone |
 | 16:00 | The close: Jamie writes `CLOSE: <code>` lines in Jobber for any visit the crew did not answer, with the reason code. The board reads them within a minute. | Jobber |
 | 16:30 | Henry's first-pass review of the day's completed program jobs: READY / FIX / HOLD per job, after the overnight checker's row. Cut-off 16:30 (decision 40). | REVIEW 🔒 (Henry's PIN) |

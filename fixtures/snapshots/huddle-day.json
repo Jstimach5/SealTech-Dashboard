@@ -1661,22 +1661,6 @@
       "reviewedAt": "2026-10-13T20:50:00.000Z",
       "match": "exact",
       "matchedJobId": "j-test-kowalski"
-    },
-    {
-      "rowIndex": 14,
-      "checked": "2026-10-14",
-      "application": "STI_ATTIC_ELLIS_…",
-      "installDate": "2026-10-13",
-      "tech": "Brant",
-      "jobDesc": "Attic insulation",
-      "verdict": "READY",
-      "jobberJobId": "j-test-ellis",
-      "jobNumber": 9011,
-      "pass": 1,
-      "reviewerUserId": "u-test-ashby",
-      "reviewedAt": "2026-10-14T12:50:00.000Z",
-      "match": "exact",
-      "matchedJobId": "j-test-ellis"
     }
   ],
   "attention": [
@@ -1776,7 +1760,7 @@
       "sinceSource": "observed",
       "ageDays": 2,
       "owner": {
-        "initials": "MC"
+        "initials": "JA"
       }
     },
     {
@@ -1863,24 +1847,6 @@
       "tags": []
     },
     {
-      "jobId": "j-test-farah",
-      "label": "FARAH · TESTVILLE · HVAC",
-      "reason": "INSPECTION/PERMIT",
-      "owner": {
-        "initials": "KA"
-      },
-      "clocks": {
-        "completed": "2026-10-05T20:00:00.000Z",
-        "first_review": "2026-10-06T20:10:00.000Z"
-      },
-      "openStage": "second_review",
-      "stageDays": 8,
-      "daysSinceCompleted": 9,
-      "colour": "red",
-      "hardRed": false,
-      "tags": []
-    },
-    {
       "jobId": "j-test-osei",
       "label": "OSEI · TESTVILLE · ATT",
       "reason": "FIX OPEN",
@@ -1955,9 +1921,9 @@
     {
       "jobId": "j-test-weiss",
       "label": "WEISS · TESTVILLE · ATT",
-      "reason": "BLOWER DOOR FAIL",
+      "reason": "AWAITING 1ST REVIEW",
       "owner": {
-        "initials": "MC"
+        "initials": "JA"
       },
       "clocks": {
         "completed": "2026-10-12T19:20:00.000Z",
@@ -2007,16 +1973,15 @@
     {
       "jobId": "j-test-ellis",
       "label": "ELLIS · TESTVILLE · ATT",
-      "reason": "AWAITING 2ND REVIEW",
+      "reason": "AWAITING 1ST REVIEW",
       "owner": {
         "initials": "JA"
       },
       "clocks": {
-        "completed": "2026-10-13T19:40:00.000Z",
-        "first_review": "2026-10-14T12:50:00.000Z"
+        "completed": "2026-10-13T19:40:00.000Z"
       },
-      "openStage": "second_review",
-      "stageDays": 0,
+      "openStage": "first_review",
+      "stageDays": 1,
       "daysSinceCompleted": 1,
       "colour": "none",
       "hardRed": false,
@@ -2041,28 +2006,44 @@
       "colour": "grey",
       "hardRed": false,
       "tags": []
+    },
+    {
+      "jobId": "j-test-farah",
+      "label": "FARAH · TESTVILLE · HVAC",
+      "reason": "INSPECTION/PERMIT",
+      "owner": {
+        "initials": "KA"
+      },
+      "clocks": {
+        "completed": "2026-10-05T20:00:00.000Z",
+        "first_review": "2026-10-06T20:10:00.000Z"
+      },
+      "openStage": "second_review",
+      "stageDays": 8,
+      "daysSinceCompleted": 9,
+      "colour": "grey",
+      "hardRed": false,
+      "tags": []
     }
   ],
   "hero": {
-    "cannotInvoice": 12,
+    "cannotInvoice": 11,
     "visitsNotReady": 0,
     "oldestDays": 21,
-    "medianDays": 3,
+    "medianDays": 2.5,
     "byReason": {
-      "AWAITING 1ST REVIEW": 3,
+      "AWAITING 1ST REVIEW": 5,
       "HOLD": 1,
-      "INSPECTION/PERMIT": 1,
       "FIX OPEN": 1,
       "READY TO INVOICE": 1,
       "FORM/QUANTITIES MISSING": 1,
-      "BLOWER DOOR FAIL": 1,
       "RETURN NEEDED": 1,
-      "AWAITING 2ND REVIEW": 1,
-      "PROGRAM-WAIT": 1
+      "PROGRAM-WAIT": 1,
+      "INSPECTION/PERMIT": 1
     },
     "reviewQueue": {
-      "pass1": 3,
-      "pass2": 1,
+      "pass1": 5,
+      "pass2": 0,
       "fix": 1,
       "hold": 1
     }
@@ -2076,9 +2057,11 @@
       "WEATHER": 1
     },
     "firstPassReady": {
-      "ready": 2,
-      "total": 3
-    }
+      "ready": 1,
+      "total": 2
+    },
+    "day": "2026-10-13",
+    "firstPassWeek": "this"
   },
   "counts": {
     "unscheduled": 2,

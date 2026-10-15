@@ -59,10 +59,12 @@ export function crewLeadInitialsFor(visit: Visit | undefined, crews: Crew[], peo
   return undefined;
 }
 
-/** Decision 33 + 16: FIX OPEN and HOLD lines carry a role word only; nothing, not even a huddle override, puts initials on them. */
+/** Decision 33 + 16: FIX OPEN, HOLD and BLOWER DOOR FAIL lines carry a role word only; nothing, not even a huddle override, puts initials on them. */
 export function roleOnlyOwner(reason: Reason | undefined): Owner | undefined {
   if (reason === 'FIX OPEN') return { role: 'CREW' };
   if (reason === 'HOLD') return { role: 'OFFICE' };
+  // Decision 33: initials never sit beside a rate; a blower-door fail line carries its reduction percentage.
+  if (reason === 'BLOWER DOOR FAIL') return { role: 'CREW' };
   return undefined;
 }
 

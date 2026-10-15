@@ -102,7 +102,8 @@ const OWNER_CASES: OwnerCase[] = [
   { name: 'override wins when neither reason nor kind is given', input: base({ override: OVERRIDE }), expected: { initials: 'ZZ' } },
   // --- crew-lead reasons: lookup on the latest visit ---
   { name: 'RETURN NEEDED → crew initials via crews.leadUserId', input: base({ reason: 'RETURN NEEDED' }), expected: { initials: 'AL' } },
-  { name: 'BLOWER DOOR FAIL → crew initials via crews.leadUserId', input: base({ reason: 'BLOWER DOOR FAIL' }), expected: { initials: 'AL' } },
+  { name: 'BLOWER DOOR FAIL → CREW role word: initials never beside a rate (decision 33)', input: base({ reason: 'BLOWER DOOR FAIL' }), expected: { role: 'CREW' } },
+  { name: 'RETURN NEEDED → crew initials via crews.leadUserId', input: base({ reason: 'RETURN NEEDED' }), expected: { initials: 'AL' } },
   {
     name: 'FORM/QUANTITIES MISSING → falls back to a person who is not a lead',
     input: base({ reason: 'FORM/QUANTITIES MISSING', visits: [mkVisit({ assignedUserIds: ['user-test-member-a'] })] }),

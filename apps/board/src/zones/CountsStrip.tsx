@@ -44,7 +44,7 @@ export function CountsStrip() {
             <span className={`count-box__num tier-c bold ${red ? 'act' : ''}`} data-testid={`counts-num-${b}`}>
               {red && (
                 <span className="count-box__icon" aria-label="act now">
-                  {CHIP.LATE.icon}
+                  {CHIP['STILL OPEN'].icon}
                 </span>
               )}
               {n}

@@ -140,9 +140,9 @@ export function firstPassReadyByCrew(
   return out;
 }
 
-/** Decision 43: any READY row tied to the job — pass 1, pass 2 or the overnight checker — makes the job READY. */
+/** Decisions 5, 52: a human READY row (pass 1 or 2) tied to the job makes it READY; the overnight checker's READY does not. */
 export function hasReadyRow(jobId: JobberId, rows: ReviewRow[]): boolean {
-  return rows.some((r) => r.match !== 'none' && r.matchedJobId === jobId && r.verdict === 'READY');
+  return rows.some((r) => r.match !== 'none' && r.matchedJobId === jobId && r.verdict === 'READY' && (r.pass === 1 || r.pass === 2));
 }
 
 /** Decision 32: the second hero number — today's visits with result Completed whose job has no READY verdict yet. */

@@ -169,12 +169,7 @@
       "visitIds": [
         "v-test-nguyen-1"
       ],
-      "noteLines": [
-        {
-          "at": "2026-10-19T13:05:00.000Z",
-          "text": "VISIT RESULT: Problem / ACCESS — crawlspace flooded, cannot enter"
-        }
-      ]
+      "noteLines": []
     },
     {
       "id": "j-test-rowe",
@@ -214,7 +209,6 @@
       "bucket": "requires_invoicing",
       "bucketSince": "2026-10-19T12:00:00.000Z",
       "bucketSinceSource": "observed",
-      "completedAt": "2026-10-19T12:30:00.000Z",
       "updatedAt": "2026-10-19T12:30:00.000Z",
       "companyCamUrl": "https://app.companycam.com/projects/test-mbeki",
       "invoiced": true,
@@ -872,10 +866,7 @@
         "u-test-a2"
       ],
       "plannedAsPrep": false,
-      "resultSource": "note",
-      "result": "Problem",
-      "resultAt": "2026-10-19T13:05:00.000Z",
-      "missReason": "ACCESS"
+      "resultSource": "unknown"
     },
     {
       "id": "v-test-okafor-1",
@@ -940,8 +931,7 @@
       "startAt": "2026-10-19T11:00:00.000Z",
       "endAt": "2026-10-19T12:30:00.000Z",
       "createdAt": "2026-10-12T14:00:00.000Z",
-      "completedAt": "2026-10-19T12:30:00.000Z",
-      "isComplete": true,
+      "isComplete": false,
       "isLastScheduledVisit": true,
       "incompleteJobFormsCount": 0,
       "formsSeenMax": 1,
@@ -950,9 +940,7 @@
         "u-test-c2"
       ],
       "plannedAsPrep": false,
-      "resultSource": "jobForm",
-      "result": "Completed",
-      "resultAt": "2026-10-19T12:30:00.000Z"
+      "resultSource": "unknown"
     },
     {
       "id": "v-test-ibrahim-1",
@@ -1673,55 +1661,6 @@
       "reviewedAt": "2026-10-18T20:50:00.000Z",
       "match": "exact",
       "matchedJobId": "j-test-kowalski"
-    },
-    {
-      "rowIndex": 14,
-      "checked": "2026-10-19",
-      "application": "STI_ATTIC_ELLIS_…",
-      "installDate": "2026-10-18",
-      "tech": "Brant",
-      "jobDesc": "Attic insulation",
-      "verdict": "READY",
-      "jobberJobId": "j-test-ellis",
-      "jobNumber": 9011,
-      "pass": 1,
-      "reviewerUserId": "u-test-ashby",
-      "reviewedAt": "2026-10-19T12:50:00.000Z",
-      "match": "exact",
-      "matchedJobId": "j-test-ellis"
-    },
-    {
-      "rowIndex": 15,
-      "checked": "2026-10-19",
-      "application": "STI_BD_MBEKI_…",
-      "installDate": "2026-10-19",
-      "tech": "Corder",
-      "jobDesc": "Blower door test",
-      "verdict": "READY",
-      "blowerDoorPrePost": "2,094 > 1,439 (31.3%)",
-      "jobberJobId": "j-test-mbeki",
-      "jobNumber": 9003,
-      "pass": 1,
-      "reviewerUserId": "u-test-ashby",
-      "reviewedAt": "2026-10-19T13:05:00.000Z",
-      "match": "exact",
-      "matchedJobId": "j-test-mbeki"
-    },
-    {
-      "rowIndex": 16,
-      "checked": "2026-10-19",
-      "application": "STI_BD_MBEKI_…",
-      "installDate": "2026-10-19",
-      "tech": "Corder",
-      "jobDesc": "Blower door test",
-      "verdict": "READY",
-      "jobberJobId": "j-test-mbeki",
-      "jobNumber": 9003,
-      "pass": 2,
-      "reviewerUserId": "u-test-owner",
-      "reviewedAt": "2026-10-19T13:15:00.000Z",
-      "match": "exact",
-      "matchedJobId": "j-test-mbeki"
     }
   ],
   "attention": [
@@ -1821,7 +1760,7 @@
       "sinceSource": "observed",
       "ageDays": 2,
       "owner": {
-        "initials": "MC"
+        "initials": "JA"
       }
     },
     {
@@ -1919,24 +1858,6 @@
       "tags": []
     },
     {
-      "jobId": "j-test-farah",
-      "label": "FARAH · TESTVILLE · HVAC",
-      "reason": "INSPECTION/PERMIT",
-      "owner": {
-        "initials": "KA"
-      },
-      "clocks": {
-        "completed": "2026-10-10T20:00:00.000Z",
-        "first_review": "2026-10-11T20:10:00.000Z"
-      },
-      "openStage": "second_review",
-      "stageDays": 8,
-      "daysSinceCompleted": 9,
-      "colour": "red",
-      "hardRed": false,
-      "tags": []
-    },
-    {
       "jobId": "j-test-osei",
       "label": "OSEI · TESTVILLE · ATT",
       "reason": "FIX OPEN",
@@ -2011,9 +1932,9 @@
     {
       "jobId": "j-test-weiss",
       "label": "WEISS · TESTVILLE · ATT",
-      "reason": "BLOWER DOOR FAIL",
+      "reason": "AWAITING 1ST REVIEW",
       "owner": {
-        "initials": "MC"
+        "initials": "JA"
       },
       "clocks": {
         "completed": "2026-10-17T19:20:00.000Z",
@@ -2063,16 +1984,15 @@
     {
       "jobId": "j-test-ellis",
       "label": "ELLIS · TESTVILLE · ATT",
-      "reason": "AWAITING 2ND REVIEW",
+      "reason": "AWAITING 1ST REVIEW",
       "owner": {
         "initials": "JA"
       },
       "clocks": {
-        "completed": "2026-10-18T19:40:00.000Z",
-        "first_review": "2026-10-19T12:50:00.000Z"
+        "completed": "2026-10-18T19:40:00.000Z"
       },
-      "openStage": "second_review",
-      "stageDays": 0,
+      "openStage": "first_review",
+      "stageDays": 1,
       "daysSinceCompleted": 1,
       "colour": "none",
       "hardRed": false,
@@ -2097,28 +2017,44 @@
       "colour": "grey",
       "hardRed": false,
       "tags": []
+    },
+    {
+      "jobId": "j-test-farah",
+      "label": "FARAH · TESTVILLE · HVAC",
+      "reason": "INSPECTION/PERMIT",
+      "owner": {
+        "initials": "KA"
+      },
+      "clocks": {
+        "completed": "2026-10-10T20:00:00.000Z",
+        "first_review": "2026-10-11T20:10:00.000Z"
+      },
+      "openStage": "second_review",
+      "stageDays": 8,
+      "daysSinceCompleted": 9,
+      "colour": "grey",
+      "hardRed": false,
+      "tags": []
     }
   ],
   "hero": {
     "cannotInvoice": 12,
     "visitsNotReady": 0,
     "oldestDays": 21,
-    "medianDays": 3,
+    "medianDays": 2.5,
     "byReason": {
-      "AWAITING 1ST REVIEW": 3,
+      "AWAITING 1ST REVIEW": 5,
       "HOLD": 1,
-      "INSPECTION/PERMIT": 1,
       "FIX OPEN": 1,
       "READY TO INVOICE": 1,
       "FORM/QUANTITIES MISSING": 1,
-      "BLOWER DOOR FAIL": 1,
       "RETURN NEEDED": 1,
-      "AWAITING 2ND REVIEW": 1,
-      "PROGRAM-WAIT": 1
+      "PROGRAM-WAIT": 1,
+      "INSPECTION/PERMIT": 1
     },
     "reviewQueue": {
-      "pass1": 3,
-      "pass2": 1,
+      "pass1": 5,
+      "pass2": 0,
       "fix": 1,
       "hold": 1
     }
@@ -2132,9 +2068,11 @@
       "WEATHER": 1
     },
     "firstPassReady": {
-      "ready": 2,
-      "total": 2
-    }
+      "ready": 1,
+      "total": 3
+    },
+    "day": "2026-10-18",
+    "firstPassWeek": "last"
   },
   "counts": {
     "unscheduled": 2,
@@ -2154,7 +2092,7 @@
     "v-test-nguyen-1": {
       "photosCount": 3,
       "lastCaptureAt": "2026-10-19T12:40:00.000Z",
-      "synced": "jobber"
+      "synced": "none"
     },
     "v-test-okafor-1": {
       "synced": "none"

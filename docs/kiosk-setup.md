@@ -39,6 +39,8 @@ The board is designed on a 1920×1080 CSS grid; the panel is 3840×2160. Chrome 
 2. Windows display settings: the panel as the second display, 3840×2160, scale 100 % (Chrome does the scaling, not Windows), "Extend" mode. Put the kiosk window on the panel (Win+Shift+Arrow once; Chrome remembers).
 3. Power: never sleep when plugged in; display off never; the panel's own power schedule turns the backlight off at 19:00 and on at 06:30.
 4. Touch: Windows → Tablet PC Settings → Setup → tap the panel so touch maps to the right display.
+5. The panel's picture settings: picture mode PC or Game, overscan off ("Just Scan" / "Screen Fit"), sharpness 0. Overscan crops 48–96 px off the sides, which is the whole margin.
+6. Chrome zoom stays at 100 %. The layout is fixed at 1920×1080 CSS px; any zoom breaks it. The wall layout switches on only at 1900 px wide or more; anything narrower gets the laptop layout.
 
 `?kiosk=1` turns on the DPR warning and the five-minute watchdog reload. On the laptop during the two-week trial, open `http://localhost:8787/` without it (or `npm run demo` with no service at all).
 
@@ -49,11 +51,11 @@ npm ci
 npm run fixtures
 npm run demo        # http://localhost:5173, fixtures, no service
 ```
-Scenarios: `http://localhost:5173/?scenario=huddle-day` (07:00), `?scenario=late-afternoon`, `?scenario=stale`, `?scenario=overflow`, `?scenario=monday-scorecard`. The clock is frozen at the scenario's time so the same picture shows on any day.
+Scenarios: `http://localhost:5173/?scenario=typical` (a live-shaped day), `?scenario=huddle-day` (07:00), `?scenario=late-afternoon`, `?scenario=stale`, `?scenario=overflow`, `?scenario=busy`, `?scenario=all-clear`, `?scenario=monday-scorecard`. Add `&wall=1` to force the wall layout on a smaller screen (for driving a TV from the laptop). The clock is frozen at the scenario's time so the same picture shows on any day.
 
 ## 5. Before the mount is final
 
-- 12-ft read test from the wall spot at 07:00 and 15:00 (`huddle-card.md`, last section). Adjust panel brightness and Chrome zoom only; never the content.
+- 12-ft and 15-ft read test on the panel at 07:00 and 15:00 (`huddle-card.md`, last section). Adjust panel brightness only; never Chrome zoom, never the content.
 - Pull the network cable at 09:00: amber dots by 09:10, red banner by 09:30 with yesterday's numbers still visible; reconnect and expect green within two polls.
 - Reboot the PC: the service and the kiosk window must both come back without a login prompt (auto-logon for the office user, or a dedicated kiosk user).
 

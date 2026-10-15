@@ -1822,7 +1822,7 @@
       "sinceSource": "observed",
       "ageDays": 2,
       "owner": {
-        "initials": "MC"
+        "initials": "JA"
       }
     },
     {
@@ -1920,24 +1920,6 @@
       "tags": []
     },
     {
-      "jobId": "j-test-farah",
-      "label": "FARAH · TESTVILLE · HVAC",
-      "reason": "INSPECTION/PERMIT",
-      "owner": {
-        "initials": "KA"
-      },
-      "clocks": {
-        "completed": "2026-10-05T20:00:00.000Z",
-        "first_review": "2026-10-06T20:10:00.000Z"
-      },
-      "openStage": "second_review",
-      "stageDays": 8,
-      "daysSinceCompleted": 9,
-      "colour": "red",
-      "hardRed": false,
-      "tags": []
-    },
-    {
       "jobId": "j-test-osei",
       "label": "OSEI · TESTVILLE · ATT",
       "reason": "FIX OPEN",
@@ -2012,9 +1994,9 @@
     {
       "jobId": "j-test-weiss",
       "label": "WEISS · TESTVILLE · ATT",
-      "reason": "BLOWER DOOR FAIL",
+      "reason": "AWAITING 1ST REVIEW",
       "owner": {
-        "initials": "MC"
+        "initials": "JA"
       },
       "clocks": {
         "completed": "2026-10-12T19:20:00.000Z",
@@ -2098,27 +2080,44 @@
       "colour": "grey",
       "hardRed": false,
       "tags": []
+    },
+    {
+      "jobId": "j-test-farah",
+      "label": "FARAH · TESTVILLE · HVAC",
+      "reason": "INSPECTION/PERMIT",
+      "owner": {
+        "initials": "KA"
+      },
+      "clocks": {
+        "completed": "2026-10-05T20:00:00.000Z",
+        "first_review": "2026-10-06T20:10:00.000Z"
+      },
+      "openStage": "second_review",
+      "stageDays": 8,
+      "daysSinceCompleted": 9,
+      "colour": "grey",
+      "hardRed": false,
+      "tags": []
     }
   ],
   "hero": {
     "cannotInvoice": 12,
     "visitsNotReady": 0,
     "oldestDays": 21,
-    "medianDays": 3,
+    "medianDays": 2.5,
     "byReason": {
-      "AWAITING 1ST REVIEW": 3,
+      "AWAITING 1ST REVIEW": 4,
       "HOLD": 1,
-      "INSPECTION/PERMIT": 1,
       "FIX OPEN": 1,
       "READY TO INVOICE": 1,
       "FORM/QUANTITIES MISSING": 1,
-      "BLOWER DOOR FAIL": 1,
       "RETURN NEEDED": 1,
       "AWAITING 2ND REVIEW": 1,
-      "PROGRAM-WAIT": 1
+      "PROGRAM-WAIT": 1,
+      "INSPECTION/PERMIT": 1
     },
     "reviewQueue": {
-      "pass1": 3,
+      "pass1": 4,
       "pass2": 1,
       "fix": 1,
       "hold": 1
@@ -2135,7 +2134,9 @@
     "firstPassReady": {
       "ready": 3,
       "total": 4
-    }
+    },
+    "day": "2026-10-13",
+    "firstPassWeek": "this"
   },
   "counts": {
     "unscheduled": 2,

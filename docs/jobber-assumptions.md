@@ -20,3 +20,7 @@ Every row is something the service code assumes about Jobber's GraphQL API that 
 | 14 | OAuth redirect to `http://localhost:8787/oauth/callback` is accepted for a private app | first token | try it in the app settings | yes: tunnel hostname fallback | |
 | 15 | All instants are returned in UTC with a `Z` suffix | every day boundary (America/Detroit) | inspect one `startAt` | yes: `time.ts` handles any ISO offset | confirmed Oct 13 |
 | 16 | `visit.assignedUsers` returns user ids that match `users` query ids | crew lanes and crew-lead owner lookup | compare one visit's assignee id with the users list | no: unmatched ids put the visit in an UNASSIGNED lane | |
+
+## Visits the service must deliver (revision G)
+
+`SourceInputs.visits` is the last worked day, today and tomorrow, **plus the latest visit of every job in an attention bucket or on the cannot-invoice list**. The ledger's why (`Sun 11 Oct visit open` for a Late job), the return owner (crew lead of the last visit) and the still-open rule read those visits. The fixture already delivers them; `apps/service/src/sources/live.ts` must fetch them at M8.

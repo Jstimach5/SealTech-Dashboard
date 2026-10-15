@@ -323,9 +323,9 @@ describe('visitsNotReady (decisions 32, 43)', () => {
 
   const cases: Array<{ name: string; input: { visits: Visit[]; rows: ReviewRow[] }; expected: number }> = [
     {
-      name: 'checker READY (no pass) counts as ready: A checker READY, B no rows → 1',
+      name: 'checker READY (no pass) does not count (decision 52): A checker READY, B no rows → 2',
       input: { visits: [DONE_A, DONE_B], rows: [checker(JOB_A, 'READY')] },
-      expected: 1,
+      expected: 2,
     },
     {
       name: 'no rows at all → every Completed visit is not ready (3 Completed + 1 Return needed) → 3',

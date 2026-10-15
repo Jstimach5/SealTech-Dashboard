@@ -1,48 +1,52 @@
 # Board brief: what is on the wall and why
 
-The one-page design reference for `apps/board`. Owner decisions are in `owner-decisions.md`; the computation behind each word is in `derivation-rules.md`; the daily use is in `huddle-card.md` and `owner-daily.md`.
+The one-page design reference for `apps/board` (revision G, Oct 15). Owner decisions are in `owner-decisions.md` (50–56 are this revision's proposals); the computation behind each word is in `derivation-rules.md`; the daily use is in `huddle-card.md` and `owner-daily.md`.
 
-## The job of the board
+## The job of the wall
 
-Two questions, answered at a glance from 12 ft: **where are the crews and how is today going** (lanes, scoreline, NEEDS ATTENTION) and **which finished jobs cannot be billed, why, and whose move is it** (the CANNOT INVOICE rail). Everything else is a second tap away. The owner's words: "understand jobsites and progress, highlight jobs we are unable to invoice for."
+One question first, in one sentence: **who has to act now.** Below it every open item has exactly one home: a ranked row in **Needs you**, a counted line in the **Requires invoicing** table, or a line in a **crew row**. The owner's words: "understand jobsites and progress, highlight jobs we are unable to invoice for."
+
+The design borrows the jobsite audit's discipline (answer first, rows not cards, red rare and always with a word, facts apart from suspicions, never "confirmed", "safe", "passed" or "compliant") but not its content: the audit is a per-visit evidence review, the wall is the live operations and billing screen.
 
 ## Why it is derived, not typed
 
-Every tracker SealTech typed into this year died within weeks (Notion Jobs, Internal Issues, Meeting Reports, the Lead Hub sheets). Every feed that fills itself is still alive (KPI Master, Daily Briefings, Photo Review Queue). So the board types nothing of its own: it reads Jobber and the two existing sheets, and the only three inputs it takes (review verdicts, issue flags, crew recaps / ACKs) are written back into those systems, never into the board.
+Every tracker SealTech typed into this year died within weeks; every feed that fills itself is still alive. The board types nothing of its own: it reads Jobber and the two existing sheets, and the inputs it takes (review verdicts, issue flags, crew recaps, ACKs) are written back into those systems. Decision 56 lists the three settings that live in the service until sheet writes exist.
 
-## Elements, by zone (TODAY screen)
+## Zones (1920×1080 CSS px, device scale 2, margins 96 / 54)
 
-| Zone | Shows | Source | Size |
-|---|---|---|---|
-| Top bar | date and clock; the typed FOCUS line (≤ 30 chars); tabs; the STALE banner when Jobber has not loaded for 30 min | focus from the service; staleness rule | 64 px |
-| Scoreline | YESTERDAY kept x of y (n unknown) with miss reasons; THIS WEEK READY first pass a of b | plan-kept and first-pass rules | 48 px |
-| NEEDS ATTENTION | up to 4 lines: Jobber's Late, Action required, Requires invoicing, oldest first, with age and owner initials | attention rule | 232 px |
-| Crew lanes | one lane per crew out today: NOW card (name, city, scope, chip, meta), two NEXT rows, collapsed DONE; after 15:00 a TOMORROW row | visits + card rule | 380 px |
-| CANNOT INVOICE rail | hero count (Jobber's own Requires invoicing figure), oldest and median days, NOT YET READY, review queue counts, top three lines coloured by stage age | cannot-invoice rules | 500 px wide, right |
-| Counts strip | Jobber's seven bucket counts in Jobber's words, plus UNANSWERED | job buckets, answered rule | 96 px |
-| Footer | four source freshness dots, responder, board owner, build, queued writes, DPR warning | service status | 32 px |
+| Zone | Box | Shows |
+|---|---|---|
+| Answer | 96–1824 × 54–190 | Line 1 (76 px): `Nguyen Problem · no ACK since 9:05 am`, `5 to act on now · 4 more today`, `Nothing to act on · 5 jobs to invoice`, `Nothing open · 7 visits today`. Line 2 (42 px): `Focus: …` left; the one win number right (`READY 1st pass 3 of 4 jobs`), or `Stale · Jobber as of 8:45 am` with an amber bar in the left margin. Touch shows the nav for 10 s. |
+| Needs you | 96–1216 × 214–974 | Head: `Needs you` and the last worked day's plan kept (`Tue 5 of 7 visits kept · 2 unanswered`). Six slots of 120 px: name (56), age (56), owner (42); status and why (42), `→ next` or the ACK button. Past six rows, five rows and a names line (`+5 · Holt · Kowalski · Diaz · Rossi · Greene`). |
+| Requires invoicing | 1280–1824 × 214–(Z4 − 24) | Jobber's own count (140 px) and `jobs`, then a table in fixed order: done today not READY, 1st pass with actor and cut-off, 2nd pass, ready to invoice, owner decides, with crews, invoiced not closed, waiting on others. 7 lines with 2 crews, 3 with 4, 1 with 5. One tap opens Cannot invoice. |
+| Crews | 1280–1824 × (974 − 104·n)–974 | One row per crew, never collapsed: crew name and next token (`→ Okafor 1 pm`, `last day · 2 of 2`, `Mbeki done`, after 15:00 `tomorrow Lee 8 am` / `none tomorrow`); the NOW job and its status (`○ 10 am`, `● Now`, `⚠ Still open`, `✓ Completed`). Schedule only: nothing a crew owes is printed here. |
+| Meta | 96–1824 × 990–1026 | 30 px, never huddle content: date, Demo data, source times, responder, photo feed, unmatched rows, unanswered forms, unknown visits, queued writes; dropped from the end when they do not fit. |
 
-Other screens: STAGES (seven Jobber columns, WIP cap, hard-red filter), CANNOT INVOICE (the full list with stage clocks), REVIEW 🔒 (PIN, READY / FIX / HOLD, unmatched rows, FLAG, focus, responder), SCORECARD 🔒 (seven numbers by week, per-crew first pass; the only place crew-level numbers exist). RECAP arrives with Jobber note writes (milestone M10). Every screen other than TODAY returns to TODAY after 60 s without a touch; REVIEW and SCORECARD also end the PIN session (decision 49).
+## Type
 
-## Formatting rules
+Inter, self-hosted (`apps/board/public/fonts`), so the TV renders the font every budget was measured in. Five sizes: 140 hero, 76 answer, 56 ledger names and ages, 42 everything else the huddle reads, 30 meta. No upper-case styling, no letter-spacing; capitals only for initials, CREW / OFFICE, FIX / HOLD / READY and ACK. Tabular figures only in age, time and count cells. Budgets are pixels measured with Inter's own advance widths (`packages/domain/src/derive/interWidths.ts`), checked in unit tests and again on the rendered page.
 
-- Design at 1920×1080 CSS px; the panel runs Chrome at device scale 2. Safe margin 96 px sides, 54 px top and bottom. Rows 64 · 48 · 232 · 380 · 96 · 32 with 24 px gaps; columns 1204 + 24 + 500.
-- Type tiers: A 140 px (the hero number only), B 85 px (NOW names, trigger words, counts), C 42 px (labels, chips, rail rows), D 24 px (meta). Nothing below D. Inter, tabular digits.
-- Colour is the house palette: brand green `#0f3d2e`; red `#e5322d` means act now; blue `#1f5ce6` means a card moved; green `#15803d` means automatic; amber means an exception; grey means someone else's clock or done. Red never appears without a word and an icon next to it.
-- Every chip is an icon and a word: `○ NOT STARTED`, `● NOW`, `⚠ LATE`, `◌ NO RESULT`, `✓ Completed`, `↩ Return needed`, `◐ Prepped`, `✕ Customer cancelled`, `⚠ Problem`, `◔ AWAITING REVIEW`, `✎ FIX`, `❚❚ HOLD`, `✓✓ READY`, `✓✓ DONE`.
-- Touch targets ≥ 48 px with 8 px gaps. Cards, strip lines and rail rows are inert; the rail, the counts boxes and ACK are the only taps on TODAY.
-- Zones clip and say `+N more`; nothing scrolls on the wall.
-- Light theme only. No animation beyond the 15-second refresh. No sound.
-- No dollars, street addresses, phone numbers, incidents, rankings or names beside a quality number, ever.
+## Colour
+
+| Colour | Where on the wall |
+|---|---|
+| Ink #14201b, ink-2 #4d5a54, hairline #d5ddd9 on #f5f7f6 | Everything. Structure is whitespace and one hairline. |
+| Brand #0f3d2e | The ACK button and the nav. Never a status. |
+| Red #e5322d (fill) | The ring and left edge of a Problem 15 minutes without ACK (decision 41). Nothing else. |
+| Red #b91c1c (text) | Age and status word of a red or hard-red row (decision 31), and of the overdue Problem. Always with the word. |
+| Amber #a24a00 (text) | 3–6 day ages, the stale bar and line, `none tomorrow`, a review line past its cut-off. |
+| Green, blue | Not on the wall (decisions 27 and 34 unchanged; they appear on PIN screens). |
+
+Every status is an icon from one inline SVG set plus a word; the word carries the meaning.
+
+## Other screens
+
+STAGES (Jobber's seven buckets, counts in the heads), CANNOT INVOICE (every line grouped by next move with actor and cut-off, stage clocks, hold reasons and FIX items in full, the reconciliation sentence), REVIEW (PIN: human verdicts solid, checker rows marked `checker:` and dashed, unmatched rows), SCORECARD (PIN: the seven decision-44 numbers by week). Every screen other than TODAY returns to TODAY after 60 s without a touch (decision 49). Laptop (1280–1899 px wide) shows every row with band headings; phone (390 px) shows the same content as a list with a tab bar.
 
 ## Rituals the board serves
 
-- 07:00 huddle, 10 minutes, standing, agenda = the default screen top to bottom.
-- 16:00 close (existing): CLOSE lines in Jobber for unanswered visits.
-- 16:30 / 17:00 verdict cut-offs (Henry, then Jack).
-- Monday 07:15 office scorecard; 4-week baseline before any target shows.
-- 30-day audit: a zone nobody used comes off.
+07:00 huddle, top to bottom in about 90 seconds of reading (`huddle-card.md`); 16:00 close; 16:30 / 17:00 verdict cut-offs; Monday 07:15 scorecard; 30-day "not discussed → remove" audit.
 
-## What was deliberately left out
+## Deliberately left out
 
-Photo capture (CompanyCam is the photo system), a fourth incident tracker (the Flags tab stays the record), a second crew answer set (Jobber's six Visit result values are the set), live clock-ins on cards (phase 2), a GHL sales tab, sounds, percentages during the baseline, and the +45 minute red "NOT STARTED" card word: there is no crew-arrived signal in v1, and a red word that fires on every in-progress visit is ignored by the second morning.
+Photo capture (CompanyCam is the photo system), a fourth incident tracker, a second crew answer set, live clock-ins, a GHL sales tab, sounds, percentages during the baseline, free text on the TV, machine verdicts on the wall, per-crew numbers on the wall, and the red "NOT STARTED" word (there is no crew-arrived signal in v1).

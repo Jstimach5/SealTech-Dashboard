@@ -69,7 +69,7 @@ describe('sourceFreshness (brief §2 stale indicator)', () => {
   });
 });
 
-describe('boardStale (decision 1: jobber is the primary source)', () => {
+describe('boardStale (decision 1; revision G: Jobber or the Review sheet)', () => {
   const cases: Array<{ name: string; input: Record<SourceName, SourceStatus>; expected: BoardStaleness }> = [
     {
       name: 'everything fresh → not stale, echoes jobber lastOkAt and 1 min',
@@ -77,8 +77,13 @@ describe('boardStale (decision 1: jobber is the primary source)', () => {
       expected: { stale: false, lastJobberOkAt: okAgo(1), minutesSince: 1 },
     },
     {
-      name: 'review sheet red but jobber green → not stale (negative: sheets never raise the banner)',
-      input: mkSources({ reviewSheet: mkSource({ lastOkAt: okAgo(RED + 10) }), flagsSheet: mkSource({ lastOkAt: okAgo(RED + 10) }) }),
+      name: 'review sheet red but jobber green → stale on the review sheet (revision G: the wall reads both)',
+      input: mkSources({ reviewSheet: mkSource({ lastOkAt: okAgo(RED + 10) }) }),
+      expected: { stale: true, source: 'reviewSheet', lastOkAt: okAgo(RED + 10), lastJobberOkAt: okAgo(1), minutesSince: 1 },
+    },
+    {
+      name: 'flags sheet red alone → not stale (negative: the wall does not read Flags)',
+      input: mkSources({ flagsSheet: mkSource({ lastOkAt: okAgo(RED + 10) }) }),
       expected: { stale: false, lastJobberOkAt: okAgo(1), minutesSince: 1 },
     },
     {
@@ -89,22 +94,22 @@ describe('boardStale (decision 1: jobber is the primary source)', () => {
     {
       name: `jobber exactly ${RED} min → stale`,
       input: mkSources({ jobber: mkSource({ lastOkAt: okAgo(RED) }) }),
-      expected: { stale: true, lastJobberOkAt: okAgo(RED), minutesSince: RED },
+      expected: { stale: true, source: 'jobber', lastOkAt: okAgo(RED), lastJobberOkAt: okAgo(RED), minutesSince: RED },
     },
     {
       name: 'jobber red while sheets green → stale (jobber alone decides)',
       input: mkSources({ jobber: mkSource({ lastOkAt: okAgo(45), ok: false, error: 'rate limited' }) }),
-      expected: { stale: true, lastJobberOkAt: okAgo(45), minutesSince: 45 },
+      expected: { stale: true, source: 'jobber', lastOkAt: okAgo(45), lastJobberOkAt: okAgo(45), minutesSince: 45 },
     },
     {
       name: 'minutesSince rounds down (30.9 min → 30)',
       input: mkSources({ jobber: mkSource({ lastOkAt: addMinutes(NOW, -30.9) }) }),
-      expected: { stale: true, lastJobberOkAt: addMinutes(NOW, -30.9), minutesSince: 30 },
+      expected: { stale: true, source: 'jobber', lastOkAt: addMinutes(NOW, -30.9), lastJobberOkAt: addMinutes(NOW, -30.9), minutesSince: 30 },
     },
     {
       name: 'jobber connected but never loaded → stale, no lastJobberOkAt / minutesSince',
       input: mkSources({ jobber: { connected: true, ok: false, lastAttemptAt: okAgo(0), error: 'boot' } }),
-      expected: { stale: true },
+      expected: { stale: true, source: 'jobber' },
     },
     {
       name: 'jobber not connected (fixtures mode, decision 47) → off, not stale',

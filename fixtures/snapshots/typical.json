@@ -1,0 +1,1045 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-14T13:30:00.000Z",
+  "boardDate": "2026-10-14",
+  "build": "fixtures",
+  "mode": "fixtures",
+  "focusLine": "PHOTOS BEFORE YOU LEAVE",
+  "responderInitials": "JA",
+  "boardOwnerInitials": "JT",
+  "sources": {
+    "jobber": {
+      "connected": true,
+      "ok": true,
+      "lastOkAt": "2026-10-14T13:29:00.000Z",
+      "lastAttemptAt": "2026-10-14T13:29:00.000Z"
+    },
+    "reviewSheet": {
+      "connected": true,
+      "ok": true,
+      "lastOkAt": "2026-10-14T13:29:00.000Z",
+      "lastAttemptAt": "2026-10-14T13:29:00.000Z"
+    },
+    "flagsSheet": {
+      "connected": true,
+      "ok": true,
+      "lastOkAt": "2026-10-14T13:29:00.000Z",
+      "lastAttemptAt": "2026-10-14T13:29:00.000Z"
+    },
+    "companyCam": {
+      "connected": false,
+      "ok": false
+    }
+  },
+  "people": [
+    {
+      "jobberUserId": "u-test-owner",
+      "lastName": "TESTOWNER",
+      "initials": "JT",
+      "role": "owner",
+      "reviewPass": 2
+    },
+    {
+      "jobberUserId": "u-test-office",
+      "lastName": "TESTOFFICE",
+      "initials": "JA",
+      "role": "office",
+      "reviewPass": 0
+    },
+    {
+      "jobberUserId": "u-test-intake",
+      "lastName": "TESTINTAKE",
+      "initials": "KA",
+      "role": "office",
+      "reviewPass": 0
+    },
+    {
+      "jobberUserId": "u-test-ashby",
+      "lastName": "ASHBY",
+      "initials": "HA",
+      "role": "crewLead",
+      "reviewPass": 1
+    },
+    {
+      "jobberUserId": "u-test-brant",
+      "lastName": "BRANT",
+      "initials": "AB",
+      "role": "crewLead",
+      "reviewPass": 0
+    },
+    {
+      "jobberUserId": "u-test-corder",
+      "lastName": "CORDER",
+      "initials": "MC",
+      "role": "crewLead",
+      "reviewPass": 0
+    },
+    {
+      "jobberUserId": "u-test-dale",
+      "lastName": "DALE",
+      "initials": "TD",
+      "role": "crewLead",
+      "reviewPass": 0
+    },
+    {
+      "jobberUserId": "u-test-a2",
+      "lastName": "ASHBY-2",
+      "initials": "A2",
+      "role": "crew",
+      "reviewPass": 0
+    },
+    {
+      "jobberUserId": "u-test-b2",
+      "lastName": "BRANT-2",
+      "initials": "B2",
+      "role": "crew",
+      "reviewPass": 0
+    },
+    {
+      "jobberUserId": "u-test-c2",
+      "lastName": "CORDER-2",
+      "initials": "C2",
+      "role": "crew",
+      "reviewPass": 0
+    },
+    {
+      "jobberUserId": "u-test-d2",
+      "lastName": "DALE-2",
+      "initials": "D2",
+      "role": "crew",
+      "reviewPass": 0
+    }
+  ],
+  "crews": [
+    {
+      "leadUserId": "u-test-ashby",
+      "leadLastName": "ASHBY",
+      "initials": "HA",
+      "memberUserIds": [
+        "u-test-ashby",
+        "u-test-a2"
+      ]
+    },
+    {
+      "leadUserId": "u-test-brant",
+      "leadLastName": "BRANT",
+      "initials": "AB",
+      "memberUserIds": [
+        "u-test-brant",
+        "u-test-b2"
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "id": "j-test-nguyen",
+      "jobNumber": 9001,
+      "title": "TESTVILLE - CONSUMERS INSTALL - NGUYEN",
+      "lastName": "NGUYEN",
+      "city": "TESTVILLE",
+      "scope": "ATT",
+      "program": "CE_INSULATION",
+      "bucket": "today",
+      "bucketSince": "2026-10-13T21:00:00.000Z",
+      "bucketSinceSource": "updatedAt",
+      "updatedAt": "2026-10-13T21:00:00.000Z",
+      "companyCamUrl": "https://app.companycam.com/projects/test-nguyen",
+      "invoiced": false,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": true,
+      "futureVisitCount": 0,
+      "visitIds": [
+        "v-test-nguyen-1"
+      ],
+      "noteLines": []
+    },
+    {
+      "id": "j-test-rowe",
+      "jobNumber": 9002,
+      "title": "TESTVILLE - CONSUMERS INSTALL - ROWE",
+      "lastName": "ROWE",
+      "city": "TESTVILLE",
+      "scope": "ATT",
+      "program": "CE_INSULATION",
+      "bucket": "today",
+      "bucketSince": "2026-10-13T21:00:00.000Z",
+      "bucketSinceSource": "updatedAt",
+      "updatedAt": "2026-10-13T21:00:00.000Z",
+      "invoiced": false,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": true,
+      "futureVisitCount": 0,
+      "visitIds": [
+        "v-test-rowe-1",
+        "v-test-rowe-2"
+      ],
+      "noteLines": [
+        {
+          "at": "2026-10-13T20:05:00.000Z",
+          "text": "CLOSE: PR"
+        }
+      ]
+    },
+    {
+      "id": "j-test-okafor",
+      "jobNumber": 9006,
+      "title": "TESTVILLE - CONSUMERS HVAC EVAL - OKAFOR",
+      "lastName": "OKAFOR",
+      "city": "TESTVILLE",
+      "scope": "EVAL",
+      "program": "CE_HVAC",
+      "bucket": "today",
+      "bucketSince": "2026-10-13T21:00:00.000Z",
+      "bucketSinceSource": "updatedAt",
+      "updatedAt": "2026-10-13T21:00:00.000Z",
+      "invoiced": false,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": true,
+      "futureVisitCount": 0,
+      "visitIds": [
+        "v-test-okafor-1"
+      ],
+      "noteLines": []
+    },
+    {
+      "id": "j-test-varga",
+      "jobNumber": 9008,
+      "title": "TESTVILLE - CONSUMERS INSTALL - VARGA",
+      "lastName": "VARGA",
+      "city": "TESTVILLE",
+      "scope": "ATT",
+      "program": "CE_INSULATION",
+      "bucket": "late",
+      "bucketSince": "2026-10-12T12:00:00.000Z",
+      "bucketSinceSource": "observed",
+      "updatedAt": "2026-10-13T21:00:00.000Z",
+      "invoiced": false,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": true,
+      "futureVisitCount": 0,
+      "visitIds": [
+        "v-test-varga-1"
+      ],
+      "noteLines": []
+    },
+    {
+      "id": "j-test-carter",
+      "jobNumber": 9010,
+      "title": "TESTVILLE - CONSUMERS INSTALL - CARTER",
+      "lastName": "CARTER",
+      "city": "TESTVILLE",
+      "scope": "ATT",
+      "program": "CE_INSULATION",
+      "bucket": "requires_invoicing",
+      "bucketSince": "2026-10-14T12:00:00.000Z",
+      "bucketSinceSource": "observed",
+      "completedAt": "2026-10-13T16:10:00.000Z",
+      "updatedAt": "2026-10-13T16:10:00.000Z",
+      "invoiced": false,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": true,
+      "futureVisitCount": 0,
+      "visitIds": [
+        "v-test-carter-1"
+      ],
+      "noteLines": []
+    },
+    {
+      "id": "j-test-ellis",
+      "jobNumber": 9011,
+      "title": "TESTVILLE - CONSUMERS INSTALL - ELLIS",
+      "lastName": "ELLIS",
+      "city": "TESTVILLE",
+      "scope": "ATT",
+      "program": "CE_INSULATION",
+      "bucket": "requires_invoicing",
+      "bucketSince": "2026-10-13T12:00:00.000Z",
+      "bucketSinceSource": "observed",
+      "completedAt": "2026-10-13T19:40:00.000Z",
+      "updatedAt": "2026-10-13T19:40:00.000Z",
+      "invoiced": false,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": true,
+      "futureVisitCount": 0,
+      "visitIds": [
+        "v-test-ellis-1"
+      ],
+      "noteLines": []
+    },
+    {
+      "id": "j-test-price",
+      "jobNumber": 9013,
+      "title": "TESTVILLE - CONSUMERS WALLS - PRICE",
+      "lastName": "PRICE",
+      "city": "TESTVILLE",
+      "scope": "WALL",
+      "program": "CE_INSULATION",
+      "bucket": "requires_invoicing",
+      "bucketSince": "2026-10-02T12:00:00.000Z",
+      "bucketSinceSource": "observed",
+      "completedAt": "2026-10-02T18:30:00.000Z",
+      "updatedAt": "2026-10-02T18:30:00.000Z",
+      "invoiced": false,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": true,
+      "futureVisitCount": 0,
+      "visitIds": [
+        "v-test-price-1"
+      ],
+      "noteLines": []
+    },
+    {
+      "id": "j-test-rossi",
+      "jobNumber": 9016,
+      "title": "TESTVILLE - CONSUMERS INSTALL - ROSSI",
+      "lastName": "ROSSI",
+      "city": "TESTVILLE",
+      "scope": "ATT",
+      "program": "CE_INSULATION",
+      "bucket": "requires_invoicing",
+      "bucketSince": "2026-10-12T12:00:00.000Z",
+      "bucketSinceSource": "observed",
+      "completedAt": "2026-10-12T20:00:00.000Z",
+      "updatedAt": "2026-10-12T20:00:00.000Z",
+      "invoiced": false,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": true,
+      "futureVisitCount": 0,
+      "visitIds": [
+        "v-test-rossi-1"
+      ],
+      "noteLines": [
+        {
+          "at": "2026-10-12T20:30:00.000Z",
+          "text": "CLOSE: C"
+        }
+      ]
+    },
+    {
+      "id": "j-test-kowalski",
+      "jobNumber": 9019,
+      "title": "TESTVILLE - CONSUMERS INSTALL - KOWALSKI",
+      "lastName": "KOWALSKI",
+      "city": "TESTVILLE",
+      "scope": "ATT",
+      "program": "CE_INSULATION",
+      "bucket": "requires_invoicing",
+      "bucketSince": "2026-10-11T12:00:00.000Z",
+      "bucketSinceSource": "observed",
+      "completedAt": "2026-10-11T18:00:00.000Z",
+      "updatedAt": "2026-10-11T18:00:00.000Z",
+      "invoiced": false,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": true,
+      "futureVisitCount": 0,
+      "visitIds": [
+        "v-test-kowalski-1"
+      ],
+      "noteLines": []
+    },
+    {
+      "id": "j-test-foster",
+      "jobNumber": 9021,
+      "title": "TESTVILLE - STD INSTALL - FOSTER",
+      "lastName": "FOSTER",
+      "city": "TESTVILLE",
+      "scope": "ATT",
+      "program": "STANDARD",
+      "bucket": "archived",
+      "bucketSince": "2026-10-13T19:50:00.000Z",
+      "bucketSinceSource": "updatedAt",
+      "completedAt": "2026-10-13T19:50:00.000Z",
+      "updatedAt": "2026-10-13T19:50:00.000Z",
+      "invoiced": true,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": false,
+      "futureVisitCount": 0,
+      "visitIds": [
+        "v-test-foster-1"
+      ],
+      "noteLines": [
+        {
+          "at": "2026-10-13T20:10:00.000Z",
+          "text": "CLOSE: C"
+        }
+      ]
+    },
+    {
+      "id": "j-test-morgan",
+      "jobNumber": 9022,
+      "title": "TESTVILLE - SERVICE CALL - MORGAN",
+      "lastName": "MORGAN",
+      "city": "TESTVILLE",
+      "scope": "SVC",
+      "program": "STANDARD",
+      "bucket": "archived",
+      "bucketSince": "2026-10-13T21:05:00.000Z",
+      "bucketSinceSource": "updatedAt",
+      "completedAt": "2026-10-13T21:05:00.000Z",
+      "updatedAt": "2026-10-13T21:05:00.000Z",
+      "invoiced": true,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": false,
+      "futureVisitCount": 0,
+      "visitIds": [
+        "v-test-morgan-1"
+      ],
+      "noteLines": [
+        {
+          "at": "2026-10-13T21:10:00.000Z",
+          "text": "CLOSE: CM"
+        }
+      ]
+    },
+    {
+      "id": "j-test-lee",
+      "jobNumber": 9027,
+      "title": "TESTVILLE - CONSUMERS INSTALL - LEE",
+      "lastName": "LEE",
+      "city": "TESTVILLE",
+      "scope": "ATT",
+      "program": "CE_INSULATION",
+      "bucket": "upcoming",
+      "bucketSince": "2026-10-13T21:00:00.000Z",
+      "bucketSinceSource": "updatedAt",
+      "updatedAt": "2026-10-13T21:00:00.000Z",
+      "invoiced": false,
+      "isZeroTotal": false,
+      "hasUninvoicedWork": true,
+      "futureVisitCount": 1,
+      "visitIds": [
+        "v-test-lee-1"
+      ],
+      "noteLines": []
+    }
+  ],
+  "visits": [
+    {
+      "id": "v-test-nguyen-1",
+      "jobId": "j-test-nguyen",
+      "startAt": "2026-10-14T12:00:00.000Z",
+      "endAt": "2026-10-14T16:00:00.000Z",
+      "createdAt": "2026-10-07T14:00:00.000Z",
+      "isComplete": false,
+      "isLastScheduledVisit": true,
+      "incompleteJobFormsCount": 1,
+      "formsSeenMax": 1,
+      "assignedUserIds": [
+        "u-test-ashby",
+        "u-test-a2"
+      ],
+      "plannedAsPrep": false,
+      "resultSource": "unknown"
+    },
+    {
+      "id": "v-test-okafor-1",
+      "jobId": "j-test-okafor",
+      "startAt": "2026-10-14T17:00:00.000Z",
+      "endAt": "2026-10-14T21:00:00.000Z",
+      "createdAt": "2026-10-07T14:00:00.000Z",
+      "isComplete": false,
+      "isLastScheduledVisit": true,
+      "incompleteJobFormsCount": 0,
+      "formsSeenMax": 0,
+      "assignedUserIds": [
+        "u-test-ashby",
+        "u-test-a2"
+      ],
+      "plannedAsPrep": false,
+      "resultSource": "unknown"
+    },
+    {
+      "id": "v-test-rowe-1",
+      "jobId": "j-test-rowe",
+      "startAt": "2026-10-13T12:00:00.000Z",
+      "endAt": "2026-10-13T20:00:00.000Z",
+      "createdAt": "2026-10-06T14:00:00.000Z",
+      "completedAt": "2026-10-13T20:00:00.000Z",
+      "isComplete": true,
+      "isLastScheduledVisit": false,
+      "incompleteJobFormsCount": 1,
+      "formsSeenMax": 1,
+      "assignedUserIds": [
+        "u-test-brant",
+        "u-test-b2"
+      ],
+      "instructions": "PR: day 1 of 2",
+      "plannedAsPrep": true,
+      "resultSource": "note",
+      "result": "Prepped",
+      "resultAt": "2026-10-13T20:05:00.000Z",
+      "closeCode": "PR"
+    },
+    {
+      "id": "v-test-rowe-2",
+      "jobId": "j-test-rowe",
+      "startAt": "2026-10-14T12:00:00.000Z",
+      "endAt": "2026-10-14T19:00:00.000Z",
+      "createdAt": "2026-10-07T14:00:00.000Z",
+      "isComplete": false,
+      "isLastScheduledVisit": true,
+      "incompleteJobFormsCount": 0,
+      "formsSeenMax": 0,
+      "assignedUserIds": [
+        "u-test-brant",
+        "u-test-b2"
+      ],
+      "instructions": "PR: day 2 of 2",
+      "plannedAsPrep": false,
+      "resultSource": "unknown"
+    },
+    {
+      "id": "v-test-carter-1",
+      "jobId": "j-test-carter",
+      "startAt": "2026-10-13T12:00:00.000Z",
+      "endAt": "2026-10-13T16:00:00.000Z",
+      "createdAt": "2026-10-06T14:00:00.000Z",
+      "completedAt": "2026-10-13T16:10:00.000Z",
+      "isComplete": true,
+      "isLastScheduledVisit": true,
+      "incompleteJobFormsCount": 0,
+      "formsSeenMax": 1,
+      "assignedUserIds": [
+        "u-test-ashby",
+        "u-test-a2"
+      ],
+      "plannedAsPrep": false,
+      "resultSource": "jobForm",
+      "result": "Completed",
+      "resultAt": "2026-10-13T16:10:00.000Z"
+    },
+    {
+      "id": "v-test-foster-1",
+      "jobId": "j-test-foster",
+      "startAt": "2026-10-13T17:00:00.000Z",
+      "endAt": "2026-10-13T20:00:00.000Z",
+      "createdAt": "2026-10-06T14:00:00.000Z",
+      "completedAt": "2026-10-13T19:50:00.000Z",
+      "isComplete": true,
+      "isLastScheduledVisit": true,
+      "incompleteJobFormsCount": 1,
+      "formsSeenMax": 1,
+      "assignedUserIds": [
+        "u-test-ashby",
+        "u-test-a2"
+      ],
+      "plannedAsPrep": false,
+      "resultSource": "note",
+      "result": "Completed",
+      "resultAt": "2026-10-13T20:10:00.000Z",
+      "closeCode": "C"
+    },
+    {
+      "id": "v-test-morgan-1",
+      "jobId": "j-test-morgan",
+      "startAt": "2026-10-13T20:15:00.000Z",
+      "endAt": "2026-10-13T21:00:00.000Z",
+      "createdAt": "2026-10-06T14:00:00.000Z",
+      "completedAt": "2026-10-13T21:05:00.000Z",
+      "isComplete": true,
+      "isLastScheduledVisit": true,
+      "incompleteJobFormsCount": 0,
+      "formsSeenMax": 0,
+      "assignedUserIds": [
+        "u-test-ashby",
+        "u-test-a2"
+      ],
+      "plannedAsPrep": false,
+      "resultSource": "note",
+      "result": "Completed",
+      "resultAt": "2026-10-13T21:10:00.000Z",
+      "closeCode": "CM"
+    },
+    {
+      "id": "v-test-ellis-1",
+      "jobId": "j-test-ellis",
+      "startAt": "2026-10-13T11:00:00.000Z",
+      "endAt": "2026-10-13T11:45:00.000Z",
+      "createdAt": "2026-10-06T14:00:00.000Z",
+      "completedAt": "2026-10-13T19:40:00.000Z",
+      "isComplete": true,
+      "isLastScheduledVisit": true,
+      "incompleteJobFormsCount": 0,
+      "formsSeenMax": 1,
+      "assignedUserIds": [
+        "u-test-brant",
+        "u-test-b2"
+      ],
+      "plannedAsPrep": false,
+      "resultSource": "jobForm",
+      "result": "Completed",
+      "resultAt": "2026-10-13T19:40:00.000Z"
+    },
+    {
+      "id": "v-test-lee-1",
+      "jobId": "j-test-lee",
+      "startAt": "2026-10-15T12:00:00.000Z",
+      "endAt": "2026-10-15T20:00:00.000Z",
+      "createdAt": "2026-10-08T14:00:00.000Z",
+      "isComplete": false,
+      "isLastScheduledVisit": true,
+      "incompleteJobFormsCount": 0,
+      "formsSeenMax": 0,
+      "assignedUserIds": [
+        "u-test-ashby",
+        "u-test-a2"
+      ],
+      "plannedAsPrep": false,
+      "resultSource": "unknown"
+    },
+    {
+      "id": "v-test-varga-1",
+      "jobId": "j-test-varga",
+      "startAt": "2026-10-11T12:00:00.000Z",
+      "endAt": "2026-10-11T20:00:00.000Z",
+      "createdAt": "2026-10-04T14:00:00.000Z",
+      "isComplete": false,
+      "isLastScheduledVisit": true,
+      "incompleteJobFormsCount": 0,
+      "formsSeenMax": 0,
+      "assignedUserIds": [
+        "u-test-brant",
+        "u-test-b2"
+      ],
+      "plannedAsPrep": false,
+      "resultSource": "unknown"
+    },
+    {
+      "id": "v-test-rossi-1",
+      "jobId": "j-test-rossi",
+      "startAt": "2026-10-12T12:00:00.000Z",
+      "endAt": "2026-10-12T20:00:00.000Z",
+      "createdAt": "2026-10-05T14:00:00.000Z",
+      "completedAt": "2026-10-12T20:00:00.000Z",
+      "isComplete": true,
+      "isLastScheduledVisit": true,
+      "incompleteJobFormsCount": 1,
+      "formsSeenMax": 1,
+      "assignedUserIds": [
+        "u-test-brant",
+        "u-test-b2"
+      ],
+      "plannedAsPrep": false,
+      "resultSource": "note",
+      "result": "Completed",
+      "resultAt": "2026-10-12T20:30:00.000Z",
+      "closeCode": "C"
+    },
+    {
+      "id": "v-test-kowalski-1",
+      "jobId": "j-test-kowalski",
+      "startAt": "2026-10-11T12:00:00.000Z",
+      "endAt": "2026-10-11T18:00:00.000Z",
+      "createdAt": "2026-10-04T14:00:00.000Z",
+      "completedAt": "2026-10-11T18:00:00.000Z",
+      "isComplete": true,
+      "isLastScheduledVisit": true,
+      "incompleteJobFormsCount": 0,
+      "formsSeenMax": 1,
+      "assignedUserIds": [
+        "u-test-brant",
+        "u-test-b2"
+      ],
+      "plannedAsPrep": false,
+      "resultSource": "jobForm",
+      "result": "Completed",
+      "resultAt": "2026-10-11T18:00:00.000Z"
+    }
+  ],
+  "reviewRows": [
+    {
+      "rowIndex": 2,
+      "checked": "2026-10-14",
+      "application": "STI_ATTIC_CARTER_…",
+      "installDate": "2026-10-13",
+      "tech": "Ashby",
+      "jobDesc": "Attic insulation + air seal",
+      "verdict": "READY",
+      "reviewNotes": "All 9 photo types present",
+      "match": "inferred",
+      "matchedJobId": "j-test-carter"
+    },
+    {
+      "rowIndex": 4,
+      "checked": "2026-10-13",
+      "application": "STI_ATTIC_ROSSI_…",
+      "installDate": "2026-10-12",
+      "tech": "Brant",
+      "jobDesc": "Attic insulation",
+      "verdict": "READY",
+      "match": "inferred",
+      "matchedJobId": "j-test-rossi"
+    },
+    {
+      "rowIndex": 7,
+      "checked": "2026-10-14",
+      "application": "STI_WALL_PRICE_…",
+      "installDate": "2026-10-02",
+      "tech": "Dale",
+      "jobDesc": "Dense-pack walls",
+      "verdict": "HOLD",
+      "holdReason": "Owner to confirm add-on scope with customer",
+      "jobberJobId": "j-test-price",
+      "jobNumber": 9013,
+      "pass": 1,
+      "reviewerUserId": "u-test-ashby",
+      "reviewedAt": "2026-10-03T20:05:00.000Z",
+      "match": "exact",
+      "matchedJobId": "j-test-price"
+    },
+    {
+      "rowIndex": 12,
+      "checked": "2026-10-14",
+      "application": "STI_ATTIC_KOWALSKI_…",
+      "installDate": "2026-10-11",
+      "tech": "Brant",
+      "jobDesc": "Attic insulation",
+      "verdict": "READY",
+      "jobberJobId": "j-test-kowalski",
+      "jobNumber": 9019,
+      "pass": 1,
+      "reviewerUserId": "u-test-ashby",
+      "reviewedAt": "2026-10-12T20:15:00.000Z",
+      "match": "exact",
+      "matchedJobId": "j-test-kowalski"
+    },
+    {
+      "rowIndex": 13,
+      "checked": "2026-10-14",
+      "application": "STI_ATTIC_KOWALSKI_…",
+      "installDate": "2026-10-11",
+      "tech": "Brant",
+      "jobDesc": "Attic insulation",
+      "verdict": "READY",
+      "jobberJobId": "j-test-kowalski",
+      "jobNumber": 9019,
+      "pass": 2,
+      "reviewerUserId": "u-test-owner",
+      "reviewedAt": "2026-10-13T20:50:00.000Z",
+      "match": "exact",
+      "matchedJobId": "j-test-kowalski"
+    },
+    {
+      "rowIndex": 14,
+      "checked": "2026-10-14",
+      "application": "STI_ATTIC_ELLIS_…",
+      "installDate": "2026-10-13",
+      "tech": "Brant",
+      "jobDesc": "Attic insulation",
+      "verdict": "READY",
+      "jobberJobId": "j-test-ellis",
+      "jobNumber": 9011,
+      "pass": 1,
+      "reviewerUserId": "u-test-ashby",
+      "reviewedAt": "2026-10-14T12:50:00.000Z",
+      "match": "exact",
+      "matchedJobId": "j-test-ellis"
+    }
+  ],
+  "attention": [
+    {
+      "kind": "late",
+      "jobId": "j-test-varga",
+      "label": "VARGA · TESTVILLE · ATT",
+      "sinceAt": "2026-10-12T12:00:00.000Z",
+      "sinceSource": "observed",
+      "ageDays": 2,
+      "owner": {
+        "initials": "AB"
+      }
+    },
+    {
+      "kind": "requires_invoicing",
+      "jobId": "j-test-price",
+      "label": "PRICE · TESTVILLE · WALL",
+      "sinceAt": "2026-10-02T12:00:00.000Z",
+      "sinceSource": "observed",
+      "ageDays": 12,
+      "owner": {
+        "role": "OFFICE"
+      }
+    },
+    {
+      "kind": "requires_invoicing",
+      "jobId": "j-test-kowalski",
+      "label": "KOWALSKI · TESTVILLE · ATT",
+      "sinceAt": "2026-10-11T12:00:00.000Z",
+      "sinceSource": "observed",
+      "ageDays": 3,
+      "owner": {
+        "initials": "JA"
+      }
+    },
+    {
+      "kind": "requires_invoicing",
+      "jobId": "j-test-rossi",
+      "label": "ROSSI · TESTVILLE · ATT",
+      "sinceAt": "2026-10-12T12:00:00.000Z",
+      "sinceSource": "observed",
+      "ageDays": 2,
+      "owner": {
+        "initials": "AB"
+      }
+    },
+    {
+      "kind": "requires_invoicing",
+      "jobId": "j-test-ellis",
+      "label": "ELLIS · TESTVILLE · ATT",
+      "sinceAt": "2026-10-13T12:00:00.000Z",
+      "sinceSource": "observed",
+      "ageDays": 1,
+      "owner": {
+        "initials": "JA"
+      }
+    },
+    {
+      "kind": "requires_invoicing",
+      "jobId": "j-test-carter",
+      "label": "CARTER · TESTVILLE · ATT",
+      "sinceAt": "2026-10-14T12:00:00.000Z",
+      "sinceSource": "observed",
+      "ageDays": 0,
+      "owner": {
+        "initials": "JA"
+      }
+    }
+  ],
+  "cannotInvoice": [
+    {
+      "jobId": "j-test-price",
+      "label": "PRICE · TESTVILLE · WALL",
+      "reason": "HOLD",
+      "owner": {
+        "role": "OFFICE"
+      },
+      "clocks": {
+        "completed": "2026-10-02T18:30:00.000Z",
+        "first_review": "2026-10-03T20:05:00.000Z"
+      },
+      "openStage": "second_review",
+      "stageDays": 11,
+      "daysSinceCompleted": 12,
+      "colour": "red",
+      "hardRed": false,
+      "tags": []
+    },
+    {
+      "jobId": "j-test-kowalski",
+      "label": "KOWALSKI · TESTVILLE · ATT",
+      "reason": "READY TO INVOICE",
+      "owner": {
+        "initials": "JA"
+      },
+      "clocks": {
+        "completed": "2026-10-11T18:00:00.000Z",
+        "first_review": "2026-10-12T20:15:00.000Z",
+        "second_review": "2026-10-13T20:50:00.000Z"
+      },
+      "openStage": "submitted",
+      "stageDays": 1,
+      "daysSinceCompleted": 3,
+      "colour": "none",
+      "hardRed": false,
+      "tags": []
+    },
+    {
+      "jobId": "j-test-rossi",
+      "label": "ROSSI · TESTVILLE · ATT",
+      "reason": "FORM/QUANTITIES MISSING",
+      "owner": {
+        "initials": "AB"
+      },
+      "clocks": {
+        "completed": "2026-10-12T20:00:00.000Z"
+      },
+      "openStage": "first_review",
+      "stageDays": 2,
+      "daysSinceCompleted": 2,
+      "colour": "none",
+      "hardRed": false,
+      "tags": []
+    },
+    {
+      "jobId": "j-test-carter",
+      "label": "CARTER · TESTVILLE · ATT",
+      "reason": "AWAITING 1ST REVIEW",
+      "owner": {
+        "initials": "JA"
+      },
+      "clocks": {
+        "completed": "2026-10-13T16:10:00.000Z"
+      },
+      "openStage": "first_review",
+      "stageDays": 1,
+      "daysSinceCompleted": 1,
+      "colour": "none",
+      "hardRed": false,
+      "tags": []
+    },
+    {
+      "jobId": "j-test-ellis",
+      "label": "ELLIS · TESTVILLE · ATT",
+      "reason": "AWAITING 2ND REVIEW",
+      "owner": {
+        "initials": "JA"
+      },
+      "clocks": {
+        "completed": "2026-10-13T19:40:00.000Z",
+        "first_review": "2026-10-14T12:50:00.000Z"
+      },
+      "openStage": "second_review",
+      "stageDays": 0,
+      "daysSinceCompleted": 1,
+      "colour": "none",
+      "hardRed": false,
+      "tags": []
+    }
+  ],
+  "hero": {
+    "cannotInvoice": 5,
+    "visitsNotReady": 0,
+    "oldestDays": 12,
+    "medianDays": 2,
+    "byReason": {
+      "HOLD": 1,
+      "READY TO INVOICE": 1,
+      "FORM/QUANTITIES MISSING": 1,
+      "AWAITING 1ST REVIEW": 1,
+      "AWAITING 2ND REVIEW": 1
+    },
+    "reviewQueue": {
+      "pass1": 1,
+      "pass2": 1,
+      "fix": 0,
+      "hold": 1
+    }
+  },
+  "scoreline": {
+    "kept": 5,
+    "planned": 5,
+    "unknown": 0,
+    "misses": {},
+    "firstPassReady": {
+      "ready": 2,
+      "total": 2
+    },
+    "day": "2026-10-13",
+    "firstPassWeek": "this"
+  },
+  "counts": {
+    "unscheduled": 0,
+    "upcoming": 1,
+    "today": 3,
+    "late": 1,
+    "action_required": 0,
+    "requires_invoicing": 5,
+    "on_hold": 0,
+    "unanswered": 0
+  },
+  "unansweredUnknown": 0,
+  "unmatchedReviewRows": 0,
+  "packagesOpen": 5,
+  "queuedWrites": [],
+  "cardMeta": {
+    "v-test-nguyen-1": {
+      "photosCount": 3,
+      "lastCaptureAt": "2026-10-14T12:40:00.000Z",
+      "synced": "none"
+    },
+    "v-test-okafor-1": {
+      "synced": "none"
+    },
+    "v-test-rowe-1": {
+      "synced": "jobber"
+    },
+    "v-test-rowe-2": {
+      "synced": "none"
+    },
+    "v-test-carter-1": {
+      "synced": "jobber"
+    },
+    "v-test-foster-1": {
+      "synced": "jobber"
+    },
+    "v-test-morgan-1": {
+      "synced": "jobber"
+    },
+    "v-test-ellis-1": {
+      "synced": "jobber"
+    },
+    "v-test-lee-1": {
+      "synced": "none"
+    },
+    "v-test-varga-1": {
+      "synced": "none"
+    },
+    "v-test-rossi-1": {
+      "synced": "jobber"
+    },
+    "v-test-kowalski-1": {
+      "synced": "jobber"
+    }
+  },
+  "scorecard": [
+    {
+      "weekStart": "2026-09-28",
+      "planKeptPct": 72,
+      "answeredPct": 81,
+      "firstPassReadyPct": 60,
+      "photoCompletePct": null,
+      "cannotInvoiceCount": 9,
+      "cannotInvoiceOldestDays": 17,
+      "daysToSubmitMedian": 6,
+      "daysToSubmitP90": 14,
+      "firstTimeAcceptancePct": null,
+      "perCrewFirstPass": {
+        "HA": {
+          "ready": 3,
+          "total": 4
+        },
+        "AB": {
+          "ready": 2,
+          "total": 3
+        },
+        "MC": {
+          "ready": 2,
+          "total": 4
+        },
+        "TD": {
+          "ready": 1,
+          "total": 3
+        }
+      }
+    },
+    {
+      "weekStart": "2026-10-05",
+      "planKeptPct": 78,
+      "answeredPct": 88,
+      "firstPassReadyPct": 71,
+      "photoCompletePct": null,
+      "cannotInvoiceCount": 11,
+      "cannotInvoiceOldestDays": 19,
+      "daysToSubmitMedian": 5,
+      "daysToSubmitP90": 12,
+      "firstTimeAcceptancePct": null,
+      "perCrewFirstPass": {
+        "HA": {
+          "ready": 3,
+          "total": 4
+        },
+        "AB": {
+          "ready": 2,
+          "total": 3
+        },
+        "MC": {
+          "ready": 2,
+          "total": 4
+        },
+        "TD": {
+          "ready": 1,
+          "total": 3
+        }
+      }
+    }
+  ]
+}

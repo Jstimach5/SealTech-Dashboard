@@ -211,6 +211,10 @@ export interface Scoreline {
   misses: Partial<Record<MissReason, number>>;
   /** Company-level only on the wall (decision 35, 44). null → dash. */
   firstPassReady: { ready: number; total: number } | null;
+  /** The last worked day the plan-kept numbers describe (most recent local day before today with a visit). */
+  day?: LocalDate;
+  /** Whether `firstPassReady` is this week's or, while this week has no pass-1 row yet, last week's. */
+  firstPassWeek?: 'this' | 'last';
 }
 
 export type Counts = Record<Exclude<Bucket, 'archived'>, number> & { unanswered: number };
@@ -275,7 +279,10 @@ export interface SourceInputs {
   people: Person[];
   crews: Crew[];
   jobs: Job[];
-  /** Visits for yesterday, today and tomorrow (local), result fields unresolved. */
+  /**
+   * Visits, result fields unresolved: the last worked day, today and tomorrow (local), plus the latest visit of
+   * every job in an attention bucket or on the cannot-invoice list (the ledger's why and owner read them).
+   */
   visits: Visit[];
   reviewRows: ReviewRow[];
   /** Job-form answers when the developer app exposes them: visitId → result. */

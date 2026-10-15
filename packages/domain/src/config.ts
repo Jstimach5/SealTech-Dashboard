@@ -8,7 +8,7 @@ export const CONFIG = {
   HARD_RED_DAYS: 20,
   /**
    * Grace after a visit's scheduled end: the card stays NOW and the visit is not yet counted as
-   * unanswered. After it, an open visit reads LATE and a complete one with no answer counts as unanswered.
+   * unanswered. After it, an open visit reads STILL OPEN and a complete one with no answer counts as unanswered.
    */
   NO_RESULT_GRACE_MIN: 30,
   /** A Problem without an acknowledgement for this many minutes gets the red border (decision 41). */

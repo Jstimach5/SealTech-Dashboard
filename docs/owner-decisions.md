@@ -1,6 +1,6 @@
-# Owner decisions (Oct 13–14, 2026)
+# Owner decisions (Oct 13–15, 2026)
 
-These 48 answers are the contract for the board. Nothing in the code re-opens them. If one changes, change this file first, then the code.
+These answers (49 signed, 50–56 proposed) are the contract for the board. Nothing in the code re-opens them. If one changes, change this file first, then the code.
 
 ## Round 1 — alignment (Oct 13)
 
@@ -27,7 +27,7 @@ These 48 answers are the contract for the board. Nothing in the code re-opens th
 21. **TV recap**: the shop touchscreen offers the recap as the second way to give the same answer.
 22. **Jobber developer app**: created by a Claude Cowork session on Jack's PC (see jobber-app-handoff.md).
 23. **Stack**: Vite + React/TypeScript board, small Node service; one `.env` on the office PC.
-24. **Prototype data**: fictional jobs shaped like real ones (TESTVILLE convention).
+24. **Prototype data**: fictional jobs shaped like real ones (TESTVILLE convention). *Revision G note: fixture names are mixed case on the wall; the city stays TESTVILLE and is not printed on TODAY.*
 25. **First screen**: Today board + "cannot invoice" list.
 26. **GHL**: none in v1.
 27. **Palette**: the house style from the printed guides — brand green #0f3d2e; red #e5322d = act; blue #1f5ce6 = card move; green #15803d = automatic; amber = exception; Inter. Urgent = red badge plus the word, never colour alone.
@@ -42,7 +42,7 @@ These 48 answers are the contract for the board. Nothing in the code re-opens th
 33. **Line owners**: initials defaulted by reason (office for review/paperwork/program-wait; crew lead for access/return/materials), changeable at the huddle. FIX and HOLD lines show a role word (CREW / OFFICE). Initials never sit beside a rate.
 34. **Card lifecycle**: Completed → AWAITING REVIEW → READY; grey only at READY + invoiced; leaves the lane at midnight.
 35. **Human lines**: a typed daily focus line (≤ 30 characters) in the top bar and one company-level crew win number on the scoreline. Recognition spoken at the huddle. No injury counter. Nobody ranked.
-36. **Viewing distance**: about 12 ft. Type tiers A 280 / B 170 / C 85 / D 48 px at 3840×2160 (140 / 85 / 42 / 24 CSS px at device scale 2). Confirm on the wall before the mount is final.
+36. **Viewing distance**: about 12 ft. Type tiers A 280 / B 170 / C 85 / D 48 px at 3840×2160 (140 / 85 / 42 / 24 CSS px at device scale 2). Confirm on the wall before the mount is final. *Amended by revision G (proposed, sign below): hero 140, answer line 76, ledger names and ages 56, everything else the huddle reads 42, meta line 30 (CSS px). The 12-ft and 15-ft read test on the 55-inch panel decides; if 56 fails at the far mark, names drop to 42 and nothing else changes.*
 37. **Huddle**: crews stage at the shop. 7:00, 10 minutes, standing at the TV, crew leads present. Agenda = the default screen top to bottom. Plus the existing 4 PM close.
 38. **Board owner**: Jack owns everything (huddle, tiles, audit, integrations). Jamie is the facilitator fallback; the 30-day "not discussed → remove" audit is on Jack's calendar.
 39. **Weekly scorecard**: Monday 7:15–7:45, office only (Jack, Jamie, Katy, Henry when not rolling). Numbers computed overnight. Crew-lead 1-minute forecast inside Monday's 7:00 huddle.
@@ -58,4 +58,18 @@ These 48 answers are the contract for the board. Nothing in the code re-opens th
 
 ## Round 3 — build review (Oct 15)
 
-49. **Auto-return**: every screen other than TODAY (STAGES, CANNOT INVOICE, REVIEW, SCORECARD) returns to TODAY after 60 s without a touch. Leaving REVIEW or SCORECARD by any route also ends the PIN session.
+49. **Auto-return**: every screen other than TODAY (STAGES, CANNOT INVOICE, REVIEW, SCORECARD) returns to TODAY after 60 s without a touch. Leaving REVIEW or SCORECARD by any route also ends the PIN session. *Revision G note: applies to the wall and the laptop; the phone layout does not auto-return.*
+
+## Round 4 — the TODAY wall, revision G (Oct 15, proposed)
+
+The board is built with these as defaults. Each line has a fallback that the code can switch to without a redesign. Sign or redirect each one; until then they are proposals, not decisions.
+
+50. **Needs-you ledger replaces the strip.** Every open item that someone must act on now or today gets one ranked row: who, age, owner, status and why, and the next step. Order: a Problem with no ACK; then still-open visits, Jobber Late, hard red, red money, overdue FIX, Jobber Action required; then ready to invoice, a return or re-test to book, a form the crew still owes. A Requires-invoicing job that is only waiting for its review is counted in the Requires-invoicing table, not listed. A completed, uninvoiced job the leak rule finds outside Requires invoicing gets a row tagged with its Jobber bucket. Six rows show; past six, five rows and a line naming the rest. *Fallback: the old NEEDS ATTENTION strip; the leak on Cannot invoice only.* Signed: ________
+51. **A scheduled inspection is grey.** An inspection or permit that is requested or scheduled runs on the inspector's clock, like PROGRAM-WAIT; a failed inspection is SealTech's move and is coloured by its days (reading of 31). *Fallback: red at 7 days as before.* Signed: ________
+52. **Machine rows are advisory.** A Review-sheet row with no Pass (the overnight checker, later the jobsite audit) shows on REVIEW beside the human verdicts and never sets a cannot-invoice reason, a FIX clock, a blower-door fail or a READY. Only Henry's and Jack's rows move a job. *Fallback: machine rows count as before.* Signed: ________
+53. **Card word `Still open`.** A visit 30 minutes past its end with no result reads `Still open`; `Late` stays Jobber's bucket word (decision 3). Signed: ________
+54. **Wall wording.** One clock style: 12-hour with am/pm. No free text on the TV: hold reasons, notes and FIX detail stay on Cannot invoice and the PIN screens. No upper-case styling. Three cell shortenings on the wall, full words on the laptop: `1st review` (awaiting 1st review), `Return` (Return needed, crew status only), `Cancelled` (Customer cancelled). Signed: ________
+55. **Owner word on crew-owed rows.** Still-open visits, unanswered forms and incomplete forms show the role word `CREW` (decision 16). Return-needed rows keep the crew lead's initials (decision 33: return / materials / access). *Alternative: initials on all of them.* Signed: ________
+56. **Decision-1 exemption.** The focus line, the responder and huddle owner overrides live only in the board service until the sheet writes of M6 exist. *Alternative: a Settings tab in the Review sheet.* Signed: ________
+
+Gaps stated, not hidden: an ACK from the wall is queued until Jobber note writes exist (11); the TV recap of decision 21 waits for M10 (crews answer in the Jobber app, 18); the date each owner says aloud at the huddle has no store and does not reach the wall.

@@ -144,7 +144,7 @@ export type OwnerRole = (typeof OWNER_ROLES)[number];
 export type ChipTone = 'grey' | 'red' | 'blue' | 'green' | 'amber' | 'brand';
 
 /** Every word a card chip can show. The six Visit results as Jobber spells them, plus the house words. */
-export type ChipWord = VisitResult | 'NOT STARTED' | 'NOW' | 'LATE' | 'NO RESULT' | 'AWAITING REVIEW' | 'FIX' | 'HOLD' | 'READY' | 'DONE';
+export type ChipWord = VisitResult | 'NOT STARTED' | 'NOW' | 'STILL OPEN' | 'NO RESULT' | 'AWAITING REVIEW' | 'FIX' | 'HOLD' | 'READY' | 'DONE';
 
 /** Card status chips: every chip is a word AND an icon (red never alone). Single source for icon and tone. */
 export const CHIP: Record<ChipWord, { icon: string; tone: ChipTone }> = {
@@ -156,7 +156,8 @@ export const CHIP: Record<ChipWord, { icon: string; tone: ChipTone }> = {
   Problem: { icon: '⚠', tone: 'red' },
   'NOT STARTED': { icon: '○', tone: 'grey' },
   NOW: { icon: '●', tone: 'brand' },
-  LATE: { icon: '⚠', tone: 'red' },
+  /** Decision 53 (proposed): a visit past its end + grace still open in Jobber. `Late` stays Jobber's bucket word. */
+  'STILL OPEN': { icon: '⚠', tone: 'red' },
   'NO RESULT': { icon: '◌', tone: 'amber' },
   'AWAITING REVIEW': { icon: '◔', tone: 'grey' },
   FIX: { icon: '✎', tone: 'amber' },

@@ -37,7 +37,7 @@ describe('TESTVILLE default scenario (Wed 2026-10-14 09:30 local)', () => {
     expect(line(snap, 'bauer')?.tags).toEqual(['NO-REMINDER']);
     expect(line(snap, 'bauer')?.hardRed).toBe(true);
     expect(snap.cannotInvoice[0]?.jobId).toBe('j-test-bauer'); // hard red first
-    expect(snap.cannotInvoice.at(-1)?.reason).toBe('PROGRAM-WAIT'); // grey last
+    expect(snap.cannotInvoice.at(-1)?.colour).toBe('grey'); // grey last (PROGRAM-WAIT and, decision 51, a scheduled inspection)
   });
 
   it.each([
@@ -46,9 +46,9 @@ describe('TESTVILLE default scenario (Wed 2026-10-14 09:30 local)', () => {
     ['osei', 'FIX OPEN', 'amber'],
     ['price', 'HOLD', 'red'],
     ['diaz', 'RETURN NEEDED', 'none'],
-    ['weiss', 'BLOWER DOOR FAIL', 'none'],
+    ['weiss', 'AWAITING 1ST REVIEW', 'none'], // decision 52: the failing reading is on a checker row only
     ['rossi', 'FORM/QUANTITIES MISSING', 'none'],
-    ['farah', 'INSPECTION/PERMIT', 'red'],
+    ['farah', 'INSPECTION/PERMIT', 'grey'], // decision 51
     ['lindqvist', 'PROGRAM-WAIT', 'grey'],
     ['kowalski', 'READY TO INVOICE', 'none'],
     ['novak-b', 'AWAITING 1ST REVIEW', 'amber'],
@@ -138,7 +138,7 @@ describe('TESTVILLE default scenario (Wed 2026-10-14 09:30 local)', () => {
 
   it('hero secondary numbers and review queue', () => {
     expect(snap.hero.visitsNotReady).toBe(0); // MBEKI is READY; no other Completed visit today yet
-    expect(snap.hero.reviewQueue).toEqual({ pass1: 3, pass2: 1, fix: 1, hold: 1 });
+    expect(snap.hero.reviewQueue).toEqual({ pass1: 4, pass2: 1, fix: 1, hold: 1 });
     expect(snap.hero.oldestDays).toBe(21);
     expect(snap.packagesOpen).toBe(snap.cannotInvoice.length - 1);
   });

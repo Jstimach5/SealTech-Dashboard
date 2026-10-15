@@ -14,7 +14,7 @@ const GAP = 4;
  * REQUIRES INVOICING never drops below 32 px: where it cannot fit it prints REQ. INVOICING.
  */
 const WORD: Record<AttentionBucket, { text: string; min: number; fallbacks?: string[] }> = {
-  late: { text: `${CHIP.LATE.icon} ${BUCKET_LABEL.late}`, min: 24 },
+  late: { text: `${CHIP['STILL OPEN'].icon} ${BUCKET_LABEL.late}`, min: 24 },
   action_required: { text: BUCKET_LABEL.action_required, min: 24 },
   requires_invoicing: { text: BUCKET_LABEL.requires_invoicing, min: 32, fallbacks: ['REQ. INVOICING'] },
 };

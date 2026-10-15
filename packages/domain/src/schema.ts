@@ -212,6 +212,8 @@ export const SnapshotSchema = z
       unknown: z.number().int(),
       misses: z.record(z.enum(MISS_REASONS), z.number().int()),
       firstPassReady: z.object({ ready: z.number().int(), total: z.number().int() }).nullable(),
+      day: z.string().optional(),
+      firstPassWeek: z.enum(['this', 'last']).optional(),
     }),
     counts: z.object({ ...countsShape, unanswered: z.number().int().nonnegative() }),
     unansweredUnknown: z.number().int().nonnegative(),

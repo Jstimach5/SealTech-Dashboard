@@ -319,9 +319,9 @@ const REASON_CASES: ReasonCase[] = [
     expected: { reason: 'FIX OPEN', fixPick: 'Chimney dam not shown', fromRowIndex: 3 },
   },
   {
-    name: 'checker FIX row (no pass) counts: FIX OPEN is any pass (decision 43)',
+    name: 'checker FIX row (no pass) is advisory: it opens no FIX (decision 52)',
     input: { rows: [checkerRow({ checked: '2026-10-06', verdict: 'FIX', fixBeforeSubmitting: 'Undated / blurry' })] },
-    expected: { reason: 'FIX OPEN', fixPick: 'Undated / blurry', fromRowIndex: 2 },
+    expected: { reason: 'AWAITING 1ST REVIEW' },
   },
   {
     name: 'FIX OPEN with no fixBeforeSubmitting has no fixPick',
@@ -391,10 +391,20 @@ const REASON_CASES: ReasonCase[] = [
     expected: { reason: 'BLOWER DOOR FAIL' },
   },
   {
-    name: 'a failing reading on an older checker row still fails (any row)',
+    name: 'a failing reading on a checker row is advisory: no BLOWER DOOR FAIL (decision 52)',
     input: {
       rows: [
         checkerRow({ rowIndex: 2, checked: '2026-10-05', blowerDoorPrePost: '1,412 > 1,190' }),
+        mkRow({ rowIndex: 3, verdict: 'READY', reviewedAt: '2026-10-06T18:00:00Z' }),
+      ],
+    },
+    expected: { reason: 'AWAITING 2ND REVIEW' },
+  },
+  {
+    name: 'a failing reading on a human row fails (any pass)',
+    input: {
+      rows: [
+        mkRow({ rowIndex: 2, verdict: 'READY', reviewedAt: '2026-10-05T18:00:00Z', blowerDoorPrePost: '1,412 > 1,190' }),
         mkRow({ rowIndex: 3, verdict: 'READY', reviewedAt: '2026-10-06T18:00:00Z' }),
       ],
     },
@@ -819,7 +829,7 @@ describe('buildCannotInvoiceLine', () => {
         openStage: 'first_review',
         stageDays: 10,
         daysSinceCompleted: 10,
-        colour: 'red',
+        colour: 'grey', // decision 51: a scheduled inspection runs on the inspector's clock
         hardRed: false,
         tags: [],
       },

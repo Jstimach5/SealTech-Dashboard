@@ -13,6 +13,10 @@ export type Freshness = 'green' | 'amber' | 'red' | 'off';
 
 export interface BoardStaleness {
   stale: boolean;
+  /** The wall source that is red (Jobber first), when stale. */
+  source?: 'jobber' | 'reviewSheet';
+  /** Its last complete successful load. */
+  lastOkAt?: Instant;
   lastJobberOkAt?: Instant;
   minutesSince?: number;
 }
@@ -32,13 +36,21 @@ export function sourceFreshness(s: SourceStatus, now: Instant): Freshness {
 }
 
 /**
- * Decision 1 / brief §2: Jobber is the primary source, so the board is stale exactly when the jobber
- * source is 'red'. The sheets going red never raises the banner on their own, and a jobber source
+ * Decision 1 / brief §2: the board is stale when Jobber or the Review sheet is 'red'. The Flags sheet
+ * going red never raises the banner, and a jobber source
  * that is 'off' (fixtures mode, decision 47) is not stale. `minutesSince` is rounded down.
  */
 export function boardStale(sources: Record<SourceName, SourceStatus>, now: Instant): BoardStaleness {
   const jobber = sources.jobber;
-  const out: BoardStaleness = { stale: sourceFreshness(jobber, now) === 'red' };
+  // Revision G: the wall reads Jobber and the Review sheet (the money table and review lines), so either
+  // going red makes the wall stale; Jobber is named first when both are.
+  const red = (['jobber', 'reviewSheet'] as const).find((k) => sources[k] && sourceFreshness(sources[k], now) === 'red');
+  const out: BoardStaleness = { stale: red !== undefined };
+  if (red) {
+    out.source = red;
+    const at = sources[red].lastOkAt;
+    if (at) out.lastOkAt = at;
+  }
   if (jobber.lastOkAt) {
     out.lastJobberOkAt = jobber.lastOkAt;
     out.minutesSince = Math.floor(minutesBetween(jobber.lastOkAt, now));

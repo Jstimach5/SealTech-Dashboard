@@ -79,7 +79,7 @@ function run(input: CardInput): CardState {
 
 const NOT_STARTED_GREY = st({ kind: 'NOT STARTED', chipWord: 'NOT STARTED', chipIcon: '○', tone: 'grey' });
 const NOW = st({ kind: 'NOW', chipWord: 'NOW', chipIcon: '●', tone: 'brand' });
-const LATE = st({ kind: 'LATE', chipWord: 'LATE', chipIcon: '⚠', tone: 'red' });
+const LATE = st({ kind: 'STILL OPEN', chipWord: 'STILL OPEN', chipIcon: '⚠', tone: 'red' });
 const NO_RESULT = st({ kind: 'NO RESULT', chipWord: 'NO RESULT', chipIcon: '◌', tone: 'amber' });
 const AWAITING = st({ kind: 'AWAITING REVIEW', chipWord: 'AWAITING REVIEW', chipIcon: '◔', tone: 'grey' });
 

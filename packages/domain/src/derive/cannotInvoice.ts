@@ -96,6 +96,11 @@ function lastRowWhere(ordered: ReviewRow[], pred: (row: ReviewRow) => boolean): 
   return undefined;
 }
 
+/** Decision 52: a human reviewer row carries Pass 1 or 2; a machine row (checker, audit) carries none. */
+export function isHumanRow(row: ReviewRow): boolean {
+  return row.pass === 1 || row.pass === 2;
+}
+
 /** Decision 30: PROGRAM-WAIT = submitted to Vault and no row records an acceptance or a return yet. */
 function isProgramWait(rows: ReviewRow[]): boolean {
   const submitted = rows.some((r) => Boolean(r.submittedDate));
@@ -170,11 +175,14 @@ export function cannotInvoiceReason(
   visits: Visit[],
   rows: ReviewRow[],
 ): { reason: Reason; fixPick?: string; fromRow?: ReviewRow } {
-  const ordered = sortedRows(rows);
+  // Decision 52 (proposed, default on): a row with no Pass is a machine row (the overnight checker, later the
+  // audit). It is advisory: shown on REVIEW beside the human verdicts (decision 43), never a reason or a clock.
+  const all = sortedRows(rows);
+  const ordered = all.filter(isHumanRow);
   const latest = ordered.at(-1);
 
-  // 1. PROGRAM-WAIT
-  if (isProgramWait(ordered)) return { reason: 'PROGRAM-WAIT' };
+  // 1. PROGRAM-WAIT (Vault dates are typed by whoever submits; any row may carry them)
+  if (isProgramWait(all)) return { reason: 'PROGRAM-WAIT' };
   // 2. HOLD
   if (latest && isOwnerHold(latest)) return { reason: 'HOLD', fromRow: latest };
   // 3. INSPECTION/PERMIT
@@ -307,10 +315,14 @@ export function lineColour(
   stageDays: number,
   daysSinceCompleted: number,
   submitted: boolean,
+  inspectionFailed = false,
 ): { colour: 'none' | 'amber' | 'red' | 'grey'; hardRed: boolean } {
   const hardRed = daysSinceCompleted >= CONFIG.HARD_RED_DAYS && !submitted;
   if (hardRed) return { colour: 'red', hardRed: true };
   if (reason === 'PROGRAM-WAIT') return { colour: 'grey', hardRed: false };
+  // Decision 51 (proposed, reading of 31): a requested or scheduled inspection runs on the inspector's clock,
+  // so it is grey like PROGRAM-WAIT; a failed inspection is SealTech's move again and is coloured by its days.
+  if (reason === 'INSPECTION/PERMIT' && !inspectionFailed) return { colour: 'grey', hardRed: false };
   if (stageDays < CONFIG.AMBER_DAYS) return { colour: 'none', hardRed: false };
   if (stageDays < CONFIG.RED_DAYS) return { colour: 'amber', hardRed: false };
   return { colour: 'red', hardRed: false };
@@ -332,10 +344,11 @@ export function buildCannotInvoiceLine(args: {
 }): CannotInvoiceLine {
   const { job, visits, rows, now, owner, tags } = args;
   const { reason, fixPick, fromRow } = cannotInvoiceReason(job, visits, rows);
-  const clocks = stageClocks(job, visits, rows);
+  const clocks = stageClocks(job, visits, rows.filter(isHumanRow).concat(rows.filter((r) => !isHumanRow(r) && (r.submittedDate || r.acceptedDate))));
   const days = stageDays(reason, clocks, visits, fromRow, now);
   const daysSinceCompleted = daysSince(clocks.completed ?? job.updatedAt, now);
-  const { colour, hardRed } = lineColour(reason, days, daysSinceCompleted, clocks.submitted !== undefined);
+  const inspectionFailed = (job.permitStatus ?? '').trim().toLowerCase() === 'failed';
+  const { colour, hardRed } = lineColour(reason, days, daysSinceCompleted, clocks.submitted !== undefined, inspectionFailed);
   const line: CannotInvoiceLine = {
     jobId: job.id,
     label: cannotInvoiceLabel(job),
