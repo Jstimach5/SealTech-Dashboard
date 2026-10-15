@@ -25,6 +25,9 @@ const PERMIT_INSPECTION_STATUSES: readonly string[] = ['inspection requested', '
 const CLOSED_FIX_STATUSES: readonly ReviewStatus[] = ['Fixed', 'Accepted as is', 'Submitted'];
 /** Clock instant for a sheet date column: local noon, so a date never straddles midnight. */
 const SHEET_DATE_HHMM = '12:00';
+/** Ordering instant for a row that has only a `checked` date: the start of that local day, so an overnight
+ *  checker row sorts before every human verdict of the same day (must agree with reviewMatch.rowOrderKey). */
+const SHEET_ORDER_HHMM = '00:00';
 
 // ---------------------------------------------------------------------------------------------
 // Parsing helpers
@@ -41,8 +44,15 @@ export function parseBlowerDoor(text: string | undefined): { pre: number; post: 
   return { pre, post, reduction: (pre - post) / pre };
 }
 
-/** When a row was reviewed: reviewedAt, else the sheet's `checked` date at local noon, else unknown. */
+/** Ordering instant: reviewedAt, else the start of the sheet's `checked` day (local), else unknown. */
 export function rowInstant(row: ReviewRow): Instant | undefined {
+  if (row.reviewedAt) return row.reviewedAt;
+  const date = parseSheetDate(row.checked);
+  return date ? fromLocal(date, SHEET_ORDER_HHMM) : undefined;
+}
+
+/** Clock instant (decision 31): reviewedAt, else the sheet's `checked` date at local noon, else unknown. */
+export function rowClockInstant(row: ReviewRow): Instant | undefined {
   if (row.reviewedAt) return row.reviewedAt;
   const date = parseSheetDate(row.checked);
   return date ? fromLocal(date, SHEET_DATE_HHMM) : undefined;
@@ -203,7 +213,7 @@ function completedClock(job: Job, visits: Visit[]): Instant | undefined {
 
 /** Decision 31: when the 1st review closed: earliest pass-1 review (reviewedAt, else checked date at noon). */
 function firstReviewClock(rows: ReviewRow[]): Instant | undefined {
-  return minInstant(...rows.filter((r) => r.pass === 1).map(rowInstant));
+  return minInstant(...rows.filter((r) => r.pass === 1).map(rowClockInstant));
 }
 
 /** Decision 31: when the 2nd review closed: earliest pass-2 reviewedAt. */

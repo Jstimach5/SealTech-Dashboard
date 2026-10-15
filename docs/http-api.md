@@ -7,7 +7,7 @@ One Node process (`apps/service`) on `PORT` (default 8787) serves the built boar
 | Method | Path | Returns |
 |---|---|---|
 | GET | `/` and any non-API path | the built board (`apps/board/dist`), SPA fallback to `index.html` |
-| GET | `/snapshot.json` | the current `Snapshot` (zod-validated). `ETag` is the snapshot's `generatedAt`; `If-None-Match` → 304. `Cache-Control: no-store`. |
+| GET | `/snapshot.json` | the current `Snapshot` (zod-validated). `ETag` is `"<generatedAt>"`, or `"<generatedAt>;<body hash>"` when the body changed under a frozen clock (`FIXTURE_NOW`); `If-None-Match` → 304. `Cache-Control: no-store`. |
 | GET | `/health` | `{ ok, build, mode, generatedAt, boardDate, sources, queued }` where `queued` is the number of queued writes |
 
 The board polls `/snapshot.json` every `CONFIG.RENDER_TICK_SEC` seconds. In fixture mode the service rebuilds the snapshot on every poll tick and immediately after any write, so a tap shows on the wall within one tick.

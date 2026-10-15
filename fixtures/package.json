@@ -12,5 +12,7 @@
   },
   "devDependencies": {
     "tsx": "4.19.2"
-  }
+  },
+  "main": "./scenarios.ts",
+  "types": "./scenarios.ts"
 }

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<!--
+  Chrome kiosk for the 55" wall panel (owner decisions 19, 36). Import on the office PC with:
+
+    schtasks /Create /TN "SealTech Board Kiosk" /XML "C:\SealTech\board\apps\service\windows\kiosk-task.xml"
+
+  or Task Scheduler > Import Task. It runs at every logon of the board user, waits 20 s for the
+  service to come up, and opens Chrome full-screen on http://localhost:8787/?kiosk=1 at device
+  scale 2 (the board is a 1920x1080 CSS grid shown on the 3840x2160 panel). Adjust the user id
+  in <UserId> and the Chrome path in <Command> if they differ on the PC.
+-->
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Author>SealTech</Author>
+    <Description>Opens the SealTech production board in Chrome kiosk mode at logon.</Description>
+    <URI>\SealTech Board Kiosk</URI>
+  </RegistrationInfo>
+  <Triggers>
+    <LogonTrigger>
+      <Enabled>true</Enabled>
+      <!-- Give the SealTechBoard service time to start and write its first snapshot. -->
+      <Delay>PT20S</Delay>
+    </LogonTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="BoardUser">
+      <!-- The account that logs on to the office PC. Replace with the real user if it is not the current one. -->
+      <UserId>S-1-5-32-545</UserId>
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>false</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <WakeToRun>false</WakeToRun>
+    <!-- Kiosk runs all day; never kill it on a timer. -->
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <Priority>7</Priority>
+  </Settings>
+  <Actions Context="BoardUser">
+    <Exec>
+      <Command>C:\Program Files\Google\Chrome\Application\chrome.exe</Command>
+      <Arguments>--kiosk --force-device-scale-factor=2 --disable-session-crashed-bubble --noerrdialogs --disable-features=TranslateUI --autoplay-policy=no-user-gesture-required --app=http://localhost:8787/?kiosk=1</Arguments>
+      <WorkingDirectory>C:\SealTech\board</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>

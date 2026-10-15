@@ -11,7 +11,7 @@
 import { CONFIG } from '../config.js';
 import type { Verdict } from '../enums.js';
 import type { Instant, Job, JobberId, LocalDate, ReviewRow, Visit } from '../types.js';
-import { daysBetweenLocalDates, localDate, toDate } from './time.js';
+import { daysBetweenLocalDates, localDate, toDate, fromLocal } from './time.js';
 
 export type MatchKind = ReviewRow['match'];
 
@@ -184,7 +184,7 @@ export function rowOrderKey(row: ReviewRow): string {
   const checkedDate = parseSheetDate(row.checked);
   let stamp = '';
   if (row.reviewedAt) stamp = normalizeInstant(row.reviewedAt);
-  else if (checkedDate !== undefined) stamp = normalizeInstant(`${checkedDate}T00:00:00Z`);
+  else if (checkedDate !== undefined) stamp = normalizeInstant(fromLocal(checkedDate, '00:00'));
   return `${stamp}|${String(row.rowIndex).padStart(8, '0')}`;
 }
 
