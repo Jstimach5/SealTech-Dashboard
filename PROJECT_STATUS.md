@@ -6,6 +6,7 @@ Updated at the end of every session. Timezone America/Detroit.
 ## Completed
 
 ## Tested (with results)
+- 2026-10-15 `tools/ui_snap.py`: `pytest tests/test_ui_snap.py` → 4 passed (cloud container, Chromium 1194, playwright 1.64). Not yet run on the workstation.
 
 ## Limitations
 
@@ -16,6 +17,7 @@ Updated at the end of every session. Timezone America/Detroit.
 - SealTech brand color(s)/logo for `docs/DESIGN.md` (`--accent` is a placeholder).
 
 ## Next
+- Session 1 step 2: add `playwright` and `pytest` to `requirements.txt`. Run ui_snap with `--chromium "C:\Program Files\Google\Chrome\Application\chrome.exe"` to avoid `playwright install` (an unapproved ~150 MB browser download).
 
 ## Prototype-vs-production compromises
 
@@ -24,3 +26,4 @@ Updated at the end of every session. Timezone America/Detroit.
 - 2026-10-14 (Jack): .claude/settings.json approved; git push allowed without asking.
 - 2026-10-14 (Jack): Pin Python >=3.12 (3.12 per spec on the workstation).
 - 2026-10-15: Added `docs/DESIGN.md` (dashboard + email design rules; token contrast checked ≥4.5:1 light and dark). Staged web-design-guidelines + playwright-cli skills in `docs/ui-skills/`. Rejected taste-skill (self-declared not for dashboards), image-to-code, awesome-design-md brand copies.
+- 2026-10-15: Reviewed 5-MCP video. Adopted Claude in Chrome for read-only GraphiQL lookups (`docs/BROWSER_RULES.md`) and Python Playwright screenshots (`tools/ui_snap.py`). Rejected Perplexity (paid, redundant), Firecrawl (paid cloud scraping, customer-data risk), Playwright MCP (redundant), HyperFrames (out of scope).

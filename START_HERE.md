@@ -62,7 +62,7 @@ Git is the tool that copies the project from GitHub. Claude Code on Windows need
 - It will stop and give you click-by-click instructions when it needs you:
   1. Adding read permissions to your Jobber app and signing in again.
   2. Creating a CompanyCam token.
-  3. Looking up a few field names in Jobber's GraphiQL tool.
+  3. Looking up a few field names in Jobber's GraphiQL tool. If the Claude in Chrome extension is on, Claude can read these itself; you just open the page. It is not allowed to click Save, run changes, or look at tokens (`docs/BROWSER_RULES.md`).
   4. Trying one screen in Microsoft Entra.
 - You'll put tokens into `.env` yourself with Notepad. **Never paste a token into any chat.**
 

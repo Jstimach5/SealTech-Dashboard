@@ -104,7 +104,7 @@ Email clients ignore most modern CSS. Separate rules:
 
 ## Done means
 A UI change is done only after: (1) web-design-guidelines review run on the changed files with
-findings fixed or justified; (2) screenshots at 390px and 1440px, light and dark, looked at;
+findings fixed or justified; (2) `python tools/ui_snap.py <url>` exits 0 and its 390px/1440px light/dark screenshots were looked at;
 (3) the hard rules above checked by a test where possible (e.g. no "confirmed" in rendered HTML).
 
 ## Open (needs Jack)

@@ -11,7 +11,7 @@ Propose a project path (suggest `C:\SealTech\jobsite-audit`) and wait for my con
 ## 3. Jobber read-only
 - Ask me to open the Jobber Developer Center and add read scopes to the existing app: jobs, visits, clients, properties, users, notes, and any job-form scope that exists. I will re-authorize in Chrome and paste the tokens into `.env`.
 - Note in STATUS that the TimeGuardian hours push needs re-pointing at the new token.
-- In GraphiQL (Developer Center → Manage Apps → Test in GraphiQL → Documentation), find and record: the `Visit` fields; whether job-form *contents* (not just the incomplete count) are queryable, and the exact field names; the `Job.lineItems` shape; note types on jobs and visits. Write findings to `docs/JOBBER_FIELDS.md`.
+- In GraphiQL (Developer Center → Manage Apps → Test in GraphiQL → Documentation), find and record (if Claude in Chrome is connected, Claude reads the Documentation pane itself under `docs/BROWSER_RULES.md` — read-only, queries only, no mutations; otherwise Jack reads it out): the `Visit` fields; whether job-form *contents* (not just the incomplete count) are queryable, and the exact field names; the `Job.lineItems` shape; note types on jobs and visits. Write findings to `docs/JOBBER_FIELDS.md`.
 - Pull the last 30 days of completed visits with: job, client, property/address, line items (name, quantity, unit), assigned users, notes, incomplete-job-form count, completion time, last-visit flag, job URL. Respect the cost throttle; back off on `THROTTLED`.
 
 ## 4. CompanyCam read-only
