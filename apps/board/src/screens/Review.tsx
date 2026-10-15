@@ -5,7 +5,7 @@
  * human), READY / FIX / HOLD to /api/review, the unmatched rows panel, and the office tools.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CHIP, CONFIG, FIX_PICKLIST, fileStem, localHHMM, sortByOrderKey, verdictsByJob, type Job, type JobVerdicts, type ReviewRow, type Verdict } from '@sealtech/domain';
+import { CHIP, CONFIG, FIX_PICKLIST, fileStem, fmtTime, localHHMM, sortByOrderKey, verdictsByJob, type Job, type JobVerdicts, type ReviewRow, type Verdict } from '@sealtech/domain';
 import { useBoard } from '../context';
 import { api } from '../data/api';
 import { dayMonth, splitLabel } from '../lib/format';
@@ -98,7 +98,7 @@ export function Review({ session }: { session: Session }) {
           {pass === 0 ? (
             <div className="note review__empty">no review pass for {session.person.lastName} · decision 5: Henry first, Jack second</div>
           ) : queue.length === 0 ? (
-            <div className="note review__empty">nothing waiting · all passed</div>
+            <div className="note review__empty">nothing waiting</div>
           ) : (
             <div className="review__list" ref={listRef} style={acting ? { display: 'none' } : undefined} data-testid="review-queue">
               {visible.map((job) => (
@@ -306,16 +306,18 @@ function VerdictCard({ title, row, testId }: { title: string; row: ReviewRow | u
   const { snapshot } = useBoard();
   // The reviewer's initials from the roster, or `?` when the reviewer is not in it: never the viewer's.
   const who = row?.reviewerUserId ? (snapshot.people.find((p) => p.jobberUserId === row.reviewerUserId)?.initials ?? '?') : '';
-  const tone = row?.verdict === 'READY' ? 'note--auto' : row?.verdict === 'FIX' || row?.verdict === 'HOLD' ? 'note--amber' : 'muted';
+  // Decision 52: a row with no Pass is a machine row: shown, marked `checker:`, dashed, never a verdict.
+  const machine = row !== undefined && row.pass === undefined;
+  const tone = machine ? 'muted' : row?.verdict === 'READY' ? 'note--auto' : row?.verdict === 'FIX' || row?.verdict === 'HOLD' ? 'note--amber' : 'muted';
   return (
-    <div className="verdict-card" data-testid={testId}>
-      <span className="tier-d caps bold muted">{title}</span>
-      <span className={`tier-c bold ${tone}`}>{row?.verdict ?? '—'}</span>
+    <div className={`verdict-card${machine ? ' verdict-card--machine' : ''}`} data-testid={testId}>
+      <span className="tier-d bold muted">{title}</span>
+      <span className={`tier-c bold ${tone}`}>{row?.verdict ? (machine ? `checker: ${row.verdict}` : row.verdict) : '—'}</span>
       <span className="tier-d muted ellipsis">
         {row ? [row.fixBeforeSubmitting, row.holdReason, row.reviewNotes, row.blowerDoorPrePost ? `blower ${row.blowerDoorPrePost}` : undefined].filter(Boolean).join(' · ') || 'no notes' : 'no row'}
       </span>
       <span className="tier-d muted">
-        {row ? `${row.reviewedAt ? `${dayMonth(row.reviewedAt)} ${localHHMM(row.reviewedAt)}` : row.checked}${who ? ` · ${who}` : ''}${row.status ? ` · ${row.status}` : ''}` : ''}
+        {row ? `${row.reviewedAt ? `${dayMonth(row.reviewedAt)} ${fmtTime(row.reviewedAt)}` : row.checked}${who ? ` · ${who}` : ''}${row.status ? ` · ${row.status}` : ''}` : ''}
       </span>
     </div>
   );

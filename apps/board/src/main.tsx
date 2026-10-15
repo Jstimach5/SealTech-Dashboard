@@ -6,6 +6,7 @@ import './theme/base.css';
 import './ui/ui.css';
 import './zones/zones.css';
 import './screens/screens.css';
+import './theme/wall.css';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

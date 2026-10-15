@@ -5,11 +5,11 @@ import type { Session } from './pin/usePin';
 export type Screen = 'today' | 'stages' | 'cannot-invoice' | 'review' | 'scorecard';
 
 export const SCREEN_TITLE: Record<Screen, string> = {
-  today: 'TODAY',
-  stages: 'STAGES',
-  'cannot-invoice': 'CANNOT INVOICE',
-  review: 'REVIEW 🔒',
-  scorecard: 'SCORECARD 🔒',
+  today: 'Today',
+  stages: 'Stages',
+  'cannot-invoice': 'Cannot invoice',
+  review: 'Review',
+  scorecard: 'Scorecard',
 };
 
 export interface Board {

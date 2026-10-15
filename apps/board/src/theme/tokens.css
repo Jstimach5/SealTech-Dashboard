@@ -1,4 +1,4 @@
-/* House palette (decision 27) and the four type tiers (decision 36) at 1920×1080 CSS px, device scale 2. */
+/* House palette (decision 27; neutrals shared with the jobsite audit, revision G) and the four type tiers (decision 36) at 1920×1080 CSS px, device scale 2. */
 :root {
   --brand: #0f3d2e;
   --act: #e5322d;
@@ -6,19 +6,19 @@
   --auto: #15803d;
   --amber-fill: #f59e0b;
   --amber-text: #b45309;
-  --grey-text: #6b7280;
-  --grey-fill: #e5e7eb;
-  --page: #f6f7f5;
+  --grey-text: #5b5f66;
+  --grey-fill: #eceef0;
+  --page: #f5f7f6;
   --card: #ffffff;
-  --ink: #111827;
-  --line: #d1d5db;
+  --ink: #14201b;
+  --line: #d5ddd9;
 
   --tier-a: 140px;
   --tier-b: 85px;
   --tier-c: 42px;
   --tier-d: 24px;
 
-  --font: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif;
+  --font: 'SealInter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif;
 
   --page-w: 1920px;
   --page-h: 1080px;

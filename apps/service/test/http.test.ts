@@ -320,7 +320,7 @@ describe('focus and responder', () => {
     expect((await h.api('POST', '/api/focus', { text: 'x'.repeat(31) }, office)).status).toBe(400);
     const r = await h.api('POST', '/api/focus', { text: '  photos   first ' }, office);
     expect(r.json).toEqual({ ok: true });
-    expect(h.snapshot().focusLine).toBe('PHOTOS FIRST');
+    expect(h.snapshot().focusLine).toBe('photos first'); // stored as typed (revision G)
     expect((await h.api('POST', '/api/focus', { text: 'x'.repeat(30) }, office)).status).toBe(200);
 
     expect((await h.api('POST', '/api/responder', { initials: 'k' }, office)).status).toBe(400);
@@ -432,7 +432,7 @@ describe('restart', () => {
     const focus = await h.api('POST', '/api/focus', { text: 'stored anyway' }, office);
     expect(focus.status).toBe(200);
     expect(focus.json).toEqual({ ok: true });
-    expect(h.service.db.getSetting('focusLine')).toBe('STORED ANYWAY');
+    expect(h.service.db.getSetting('focusLine')).toBe('stored anyway');
     const review = await h.api('POST', '/api/review', { jobId: 'j-test-carter', pass: 1, verdict: 'READY' }, henry);
     expect(review.status).toBe(200);
     expect(review.json).toMatchObject({ ok: true, deduped: false });

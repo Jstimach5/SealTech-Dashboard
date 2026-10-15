@@ -2,7 +2,7 @@ import { expect, type Page, type TestInfo } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const SCENARIOS = ['default', 'huddle-day', 'late-afternoon', 'stale', 'overflow'] as const;
+export const SCENARIOS = ['default', 'typical', 'huddle-day', 'late-afternoon', 'stale', 'overflow', 'busy', 'all-clear'] as const;
 export type Scenario = (typeof SCENARIOS)[number];
 
 export function screenshotDir(info: TestInfo): string {
@@ -73,4 +73,11 @@ export async function expectButtonsTappable(page: Page): Promise<void> {
     return bad;
   });
   expect(small, 'buttons smaller than 48×48').toEqual([]);
+}
+
+/** Open a screen by its tab. On the wall TODAY the nav hides until the answer line is touched (revision G). */
+export async function openTab(page: Page, tab: string): Promise<void> {
+  const t = page.getByTestId(`tab-${tab}`);
+  if ((await t.count()) === 0) await page.getByTestId('answer').click();
+  await t.click();
 }

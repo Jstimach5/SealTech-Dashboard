@@ -38,6 +38,16 @@ export default defineConfig({
       name: 'laptop',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 },
     },
+    {
+      name: 'laptop-1440',
+      testMatch: /today\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 },
+    },
+    {
+      name: 'phone-390',
+      testMatch: /today\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, hasTouch: true },
+    },
   ],
   webServer: {
     command: 'npm run preview -w apps/board -- --port 4173 --strictPort',

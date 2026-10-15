@@ -1,5 +1,5 @@
 /** Wall text helpers. Every rule lives in @sealtech/domain; these only print. */
-import { localHHMM, localParts, type Instant, type LocalDate } from '@sealtech/domain';
+import { fmtTime, localParts, type Instant, type LocalDate } from '@sealtech/domain';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
@@ -10,9 +10,9 @@ export function wallDate(instant: Instant): string {
   return `${WEEKDAYS[p.weekday] ?? ''} ${p.d} ${MONTHS[p.m - 1] ?? ''}`;
 }
 
-/** `09:30` */
+/** `9:30 am` (decision 54: one 12-hour clock style everywhere) */
 export function wallTime(instant: Instant): string {
-  return localHHMM(instant);
+  return fmtTime(instant);
 }
 
 /** `Wed 14 Oct · 09:30` */
@@ -32,9 +32,9 @@ export function dayMonthOfLocalDate(date: LocalDate): string {
   return `${d} ${MONTHS[m - 1] ?? ''}`;
 }
 
-/** `08:00–12:00` */
+/** `8 am–12 pm` */
 export function timeRange(startAt: Instant, endAt: Instant): string {
-  return `${localHHMM(startAt)}–${localHHMM(endAt)}`;
+  return `${fmtTime(startAt, true)}–${fmtTime(endAt, true)}`;
 }
 
 /** `21 d` */

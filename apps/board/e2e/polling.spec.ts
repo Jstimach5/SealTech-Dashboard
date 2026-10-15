@@ -52,7 +52,7 @@ test('a snapshot the schema refuses, a 500 and a network failure keep the last g
   await expect(page.getByTestId('snapshot-error')).toBeVisible();
   await expect(page.getByTestId('snapshot-error')).not.toContainText('snapshot 500');
   await expect(page.getByTestId('hero')).toHaveText('12');
-  await expect(page.getByTestId('lanes')).toBeVisible();
+  await expect(page.getByTestId('ledger')).toBeVisible();
 
   await tick(page, () => n);
   await expect(page.getByTestId('snapshot-error')).toHaveCount(0);

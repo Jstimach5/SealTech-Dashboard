@@ -11,7 +11,7 @@ import { BoardContext, type Board, type Screen } from './context';
 import { api, postTap } from './data/api';
 import { useNow } from './data/useNow';
 import { useSnapshot } from './data/useSnapshot';
-import { kioskMode } from './lib/mode';
+import { kioskMode, wallForced } from './lib/mode';
 import type { Session } from './pin/usePin';
 import { CannotInvoice } from './screens/CannotInvoice';
 import { PinGate } from './screens/PinGate';
@@ -25,17 +25,28 @@ import { TopBar } from './zones/TopBar';
 const WATCHDOG_MS = 5 * 60 * 1000;
 const OFFICE_ROLES: ReadonlySet<string> = new Set(['office', 'owner']);
 
-/** Scale the 1920×1080 page down to the window (never up): no scroll, ever. */
-function useViewportScale(): void {
+/** Revision G: the wall layout only where it fits (≥ 1900×1060 CSS px) or when forced with `?wall=1`. */
+function wallFits(): boolean {
+  return wallForced() || (window.innerWidth >= 1900 && window.innerHeight >= 1060);
+}
+
+/**
+ * Layout by viewport: 'wall' (the fixed 1920×1080 page) or 'compact' (TODAY as a responsive list). The
+ * PIN screens and lookups keep the fixed 1920×1080 page, scaled down (never up) on a smaller window.
+ */
+function useLayout(): 'wall' | 'compact' {
+  const [layout, setLayout] = useState<'wall' | 'compact'>(() => (wallFits() ? 'wall' : 'compact'));
   useEffect(() => {
     const apply = () => {
-      const s = Math.min(1, window.innerWidth / 1920, window.innerHeight / 1080);
+      setLayout(wallFits() ? 'wall' : 'compact');
+      const s = wallForced() ? 1 : Math.min(1, window.innerWidth / 1920, window.innerHeight / 1080);
       document.documentElement.style.setProperty('--scale', String(Number.isFinite(s) && s > 0 ? s : 1));
     };
     apply();
     window.addEventListener('resize', apply);
     return () => window.removeEventListener('resize', apply);
   }, []);
+  return layout;
 }
 
 /**
@@ -79,7 +90,7 @@ export function App() {
   const [session, setSession] = useState<Session | undefined>(undefined);
   const [pendingAck, setPendingAck] = useState<string | undefined>(undefined);
   const [ackNotes, setAckNotes] = useState<Record<string, string>>({});
-  useViewportScale();
+  const layout = useLayout();
   useWatchdog(lastOkAt);
 
   const go = useCallback(
@@ -170,17 +181,29 @@ export function App() {
         body = session ? <Scorecard /> : <PinGate title="SCORECARD" testId="screen-scorecard" />;
         break;
       default:
-        body = <Today />;
+        body = <Today layout={layout} />;
     }
   }
 
+  const todayScreen = screen === 'today' && !(pendingAck !== undefined && !session);
+  const compactToday = todayScreen && layout === 'compact';
+  if (typeof document !== 'undefined') document.documentElement.classList.toggle('layout-compact', compactToday);
+
   return (
     <BoardContext.Provider value={board}>
-      <div className="page" data-screen={screen}>
-        <TopBar />
-        {body}
-        <Footer />
-      </div>
+      {compactToday ? (
+        body
+      ) : todayScreen ? (
+        <div className="page page--wall" data-screen={screen}>
+          {body}
+        </div>
+      ) : (
+        <div className="page" data-screen={screen}>
+          <TopBar />
+          {body}
+          <Footer />
+        </div>
+      )}
     </BoardContext.Provider>
   );
 }

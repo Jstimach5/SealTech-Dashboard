@@ -1,5 +1,5 @@
 /** Top bar: clock · FOCUS line (or the STALE banner) · screen tabs. The focus line is the one human-typed line on the wall and always shows whole. */
-import { boardStale } from '@sealtech/domain';
+import { boardStale, sentenceCase } from '@sealtech/domain';
 import { SCREEN_TITLE, useBoard, type Screen } from '../context';
 import { wallClock, wallTime } from '../lib/format';
 import { FitText } from '../ui/FitText';
@@ -10,9 +10,9 @@ const TABS: Screen[] = ['today', 'stages', 'cannot-invoice', 'review', 'scorecar
 export function TopBar() {
   const { snapshot, now, displayNow, frozen, screen, go } = useBoard();
   const stale = boardStale(snapshot.sources, now);
-  const staleHead = `⚠ DATA STALE · ${stale.minutesSince ?? '—'} min`;
-  const staleTail = `last Jobber load ${stale.lastJobberOkAt ? wallTime(stale.lastJobberOkAt) : '—'}`;
-  const focus = snapshot.focusLine.trim().toUpperCase();
+  const staleHead = `⚠ Stale · ${stale.minutesSince ?? '—'} min`;
+  const staleTail = `${stale.source === 'reviewSheet' ? 'Review sheet' : 'Jobber'} as of ${stale.lastOkAt ? wallTime(stale.lastOkAt) : '—'}`;
+  const focus = sentenceCase(snapshot.focusLine.trim());
   return (
     <header className="topbar zone" data-testid="topbar">
       <div className="topbar__clock tier-d bold" aria-label="clock" data-testid="clock">
@@ -27,7 +27,7 @@ export function TopBar() {
           </div>
         ) : focus !== '' ? (
           <div className="focus-line" data-testid="focus-line" aria-label="focus line">
-            <FitText text={focus} max={42} min={32} wrap className="bold caps brand focus-line__text" />
+            <FitText text={focus} max={42} min={32} wrap className="bold brand focus-line__text" />
           </div>
         ) : null}
       </div>
@@ -38,7 +38,7 @@ export function TopBar() {
             type="button"
             className={`tab ${screen === s ? 'tab--active' : ''}`}
             data-testid={`tab-${s}`}
-            aria-label={`${SCREEN_TITLE[s].replace(' 🔒', '')} screen`}
+            aria-label={`${SCREEN_TITLE[s]} screen`}
             aria-current={screen === s ? 'page' : undefined}
             onClick={() => go(s, `tab:${s}`)}
           >

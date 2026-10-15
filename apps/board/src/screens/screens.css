@@ -558,3 +558,8 @@
   align-items: baseline;
   gap: 12px;
 }
+
+/* Decision 52: machine (checker) rows are drawn dashed, never solid like a human verdict. */
+.verdict-card--machine { border: 2px dashed var(--grey-text); }
+.cannot__group { color: var(--brand); margin-top: 8px; }
+.cannot__reconcile { margin-bottom: 4px; }

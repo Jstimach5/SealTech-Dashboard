@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { expectButtonsTappable, expectMinFontSize, expectNoHorizontalScroll, openBoard, screenshot } from './helpers';
+import { expectButtonsTappable, expectMinFontSize, expectNoHorizontalScroll, openBoard, screenshot, openTab } from './helpers';
 
 const PEOPLE = [
   { jobberUserId: 'u-test-owner', lastName: 'TESTOWNER', initials: 'JT', role: 'owner', reviewPass: 2 },
@@ -59,9 +59,9 @@ async function pickQueueCard(page: Page, jobId: string): Promise<void> {
   await card.click();
 }
 
-test('STAGES opens from a counts box with seven columns and the WIP cap line', async ({ page }, info) => {
+test('STAGES opens from its tab with seven columns and the WIP cap line', async ({ page }, info) => {
   await openBoard(page, 'default');
-  await page.getByTestId('counts-requires_invoicing').click();
+  await openTab(page, 'stages');
   await expect(page.getByTestId('screen-stages')).toBeVisible();
   await expect(page.locator('[data-testid^="stage-col-"]')).toHaveCount(7);
   await expect(page.getByTestId('packages-open')).toHaveText('Packages open 11 / cap 15');
@@ -82,29 +82,35 @@ test('STAGES opens from a counts box with seven columns and the WIP cap line', a
   await expect(page.getByTestId('stage-row-j-test-bauer')).toBeVisible();
 });
 
-test('CANNOT INVOICE opens from the rail and lists 12 rows across 2 pages', async ({ page }, info) => {
+test('CANNOT INVOICE opens from the money zone, grouped by next move, 12 rows across 2 pages', async ({ page }, info) => {
   await openBoard(page, 'default');
-  await page.getByTestId('rail').click();
+  await page.getByTestId('money').click();
   await expect(page.getByTestId('screen-cannot-invoice')).toBeVisible();
+  await expect(page.getByTestId('cannot-reconcile')).toHaveText("Jobber counts 12 · 11 of them listed here · Mbeki invoiced, not closed · Bauer listed, not in Jobber's count");
   const rows = page.locator('[data-testid^="cannot-row-"]');
-  await expect(rows).toHaveCount(8);
-  await expect(rows.first()).toHaveAttribute('data-testid', 'cannot-row-j-test-bauer');
-  await expect(rows.first()).toContainText('NO-REMINDER');
+  await expect(rows).toHaveCount(6);
+  await expect(rows.first()).toHaveAttribute('data-testid', 'cannot-row-j-test-kowalski');
+  await expect(page.getByTestId('cannot-group-bill')).toHaveText('Bill today · JA');
+  await expect(page.getByTestId('cannot-group-first')).toHaveText('1st pass · HA by 4:30 pm');
+  const bauer = page.getByTestId('cannot-row-j-test-bauer');
+  await expect(bauer).toContainText('not in Requires invoicing');
   // Hard red carries a word and an icon (decision 27), and the stage words are decision 31's.
-  await expect(page.getByTestId('hard-red-j-test-bauer')).toHaveText('⚠ 20+ d UNSUBMITTED');
-  await expect(rows.first()).toContainText('done 23 Sep');
-  await expect(rows.first()).toContainText('submitted —');
-  await expect(rows.first()).toContainText('accepted —');
-  await expect(rows.first()).not.toContainText(/\bsent\b|\bok\b/);
+  await expect(page.getByTestId('hard-red-j-test-bauer')).toHaveText('⚠ 20+ d unsubmitted');
+  await expect(bauer).toContainText('done 23 Sep');
+  await expect(bauer).toContainText('submitted —');
+  await expect(bauer).toContainText('accepted —');
+  await expect(bauer).not.toContainText(/\bsent\b|\bok\b/);
   // FIX OPEN shows its picklist item and the CREW role word, and offers no OWNER control.
+  await expect(page.getByTestId('owner-j-test-bauer')).toBeVisible();
+  await expect(page.getByTestId('cannot-page')).toHaveText('1–6 of 12');
+  await page.getByTestId('cannot-next').click();
   const osei = page.getByTestId('cannot-row-j-test-osei');
-  await expect(osei).toContainText('FIX OPEN');
+  await expect(osei).toContainText('FIX open');
   await expect(osei).toContainText('No depth marker or ruler');
   await expect(page.getByTestId('cannot-owner-j-test-osei')).toHaveText('CREW');
   await expect(page.getByTestId('owner-j-test-osei')).toHaveCount(0);
   await expect(page.getByTestId('owner-j-test-price')).toHaveCount(0);
-  await expect(page.getByTestId('owner-j-test-bauer')).toBeVisible();
-  await expect(page.getByTestId('cannot-page')).toHaveText('1–8 of 12');
+  await expect(page.getByTestId('cannot-page')).toHaveText('7–12 of 12');
   await screenshot(page, info, 'cannot-invoice');
   await expectNoHorizontalScroll(page);
   await expectMinFontSize(page, 24);
@@ -114,12 +120,10 @@ test('CANNOT INVOICE opens from the rail and lists 12 rows across 2 pages', asyn
     els.flatMap((el) => Array.from(el.querySelectorAll<HTMLElement>('.cannot-row__top, .cannot-row__clocks')).filter((e) => e.scrollWidth > e.clientWidth + 1).map(() => el.getAttribute('data-testid'))),
   );
   expect(cut).toEqual([]);
-  // All eight rows of the page sit whole inside the list.
+  // All six rows of the page sit whole inside the list.
   const fit = await page.locator('.cannot__rows').evaluate((el) => ({ zone: el.getBoundingClientRect().bottom, last: (el.lastElementChild as HTMLElement).getBoundingClientRect().bottom }));
   expect(fit.last).toBeLessThanOrEqual(fit.zone + 1);
-  await page.getByTestId('cannot-next').click();
-  await expect(rows).toHaveCount(4);
-  await expect(page.getByTestId('cannot-page')).toHaveText('9–12 of 12');
+  await expect(rows).toHaveCount(6);
   await expect(rows.last()).toHaveAttribute('data-testid', 'cannot-row-j-test-lindqvist');
   await expect(page.getByTestId('cannot-next')).toBeDisabled();
 });
@@ -127,7 +131,7 @@ test('CANNOT INVOICE opens from the rail and lists 12 rows across 2 pages', asyn
 test('OWNER on a CANNOT INVOICE row: office PIN, initials tiles, POST /api/owner, then the session ends', async ({ page }) => {
   const calls = await mockService(page);
   await openBoard(page, 'default');
-  await page.getByTestId('rail').click();
+  await page.getByTestId('money').click();
   await page.getByTestId('owner-j-test-bauer').click();
   await expect(page.getByTestId('screen-owner-pin')).toBeVisible();
   // Only office and owner people may change a line owner.
@@ -141,7 +145,7 @@ test('OWNER on a CANNOT INVOICE row: office PIN, initials tiles, POST /api/owner
   await expect(page.getByTestId('owner-note-j-test-bauer')).toContainText('saved');
   expect(posted(calls, '/api/owner')).toEqual([{ path: '/api/owner', body: { jobId: 'j-test-bauer', initials: 'MC' }, auth: 'Bearer t-test' }]);
   // The session ended with the write: the next OWNER asks for a PIN again.
-  await page.getByTestId('owner-j-test-farah').click();
+  await page.getByTestId('owner-j-test-novak-b').click();
   await expect(page.getByTestId('screen-owner-pin')).toBeVisible();
   await page.getByTestId('pin-cancel').click();
   await expect(page.getByTestId('screen-cannot-invoice')).toBeVisible();
@@ -149,7 +153,7 @@ test('OWNER on a CANNOT INVOICE row: office PIN, initials tiles, POST /api/owner
 
 test('REVIEW shows the PIN pad with keys of at least 96 px', async ({ page }, info) => {
   await openBoard(page, 'default');
-  await page.getByTestId('tab-review').click();
+  await openTab(page, 'review');
   await expect(page.getByTestId('screen-review')).toBeVisible();
   await expect(page.getByTestId('pin-pad')).toBeVisible();
   const keys = page.locator('[data-testid^="pin-key-"]');
@@ -181,7 +185,7 @@ test('PIN lockout: the 423 message clears when the window ends', async ({ page }
     return route.fulfill({ status: 423, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'locked for 60 s after 3 wrong PINs', lockedForSec: 60 }) });
   });
   await openBoard(page, 'default');
-  await page.getByTestId('tab-review').click();
+  await openTab(page, 'review');
   await page.getByTestId('pin-tile-u-test-ashby').click();
   for (let i = 0; i < 3; i++) for (const d of ['9', '9', '9', '9']) await page.getByTestId(`pin-key-${d}`).click();
   await expect(page.getByTestId('pin-pad')).toContainText('locked · try again in');
@@ -198,7 +202,7 @@ test('PIN lockout: the 423 message clears when the window ends', async ({ page }
 test('REVIEW after a PIN: the queue from the cannot-invoice lines, both verdicts, FIX picklist, POST /api/review with the token', async ({ page }, info) => {
   const calls = await mockService(page);
   await openBoard(page, 'default');
-  await page.getByTestId('tab-review').click();
+  await openTab(page, 'review');
   await signIn(page, 'u-test-ashby');
   await expect(page.getByTestId('review-queue')).toBeVisible();
   await expect(page.getByTestId('cutoffs')).toContainText('16:30');
@@ -251,7 +255,7 @@ test('REVIEW: a reviewer missing from the roster prints ?, never the viewer\'s i
   snap.people = snap.people.filter((p) => p.jobberUserId !== 'u-test-ashby');
   await page.route('**/snapshots/default.json', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(snap) }));
   await openBoard(page, 'default');
-  await page.getByTestId('tab-review').click();
+  await openTab(page, 'review');
   await signIn(page, 'u-test-owner');
   await pickQueueCard(page, 'j-test-osei');
   await expect(page.getByTestId('verdict-human')).toContainText('FIX');
@@ -262,7 +266,7 @@ test('REVIEW: a reviewer missing from the roster prints ?, never the viewer\'s i
 test('REVIEW as the owner: pass-2 READY waits for a 1st pass READY; HOLD needs a reason and posts it', async ({ page }) => {
   const calls = await mockService(page);
   await openBoard(page, 'default');
-  await page.getByTestId('tab-review').click();
+  await openTab(page, 'review');
   await signIn(page, 'u-test-owner');
   await expect(page.getByTestId('tools')).toBeVisible();
   // OSEI: pass-1 FIX → pass-2 READY disabled with the words.
@@ -290,7 +294,7 @@ test('REVIEW as the owner: pass-2 READY waits for a 1st pass READY; HOLD needs a
 test('office tools: FOCUS, RESPONDER and FLAG post their bodies with the token', async ({ page }) => {
   const calls = await mockService(page);
   await openBoard(page, 'default');
-  await page.getByTestId('tab-review').click();
+  await openTab(page, 'review');
   await signIn(page, 'u-test-office');
   await expect(page.getByTestId('tools')).toBeVisible();
 
@@ -334,7 +338,7 @@ test('office tools: FOCUS, RESPONDER and FLAG post their bodies with the token',
 test('SCORECARD after a PIN: one row per week, dashes for missing feeds, no targets', async ({ page }, info) => {
   await mockService(page);
   await openBoard(page, 'monday-scorecard');
-  await page.getByTestId('tab-scorecard').click();
+  await openTab(page, 'scorecard');
   await expect(page.getByTestId('screen-scorecard')).toBeVisible();
   await signIn(page, 'u-test-owner');
   await expect(page.locator('[data-testid^="scorecard-row-"]')).toHaveCount(13);
@@ -363,7 +367,7 @@ test('ACK on a Problem card asks for a PIN, then POSTs /api/ack, shows the outco
   await page.getByTestId('ack-v-test-nguyen-1').click();
   await expect(page.getByTestId('screen-ack-pin')).toBeVisible();
   await page.getByTestId('pin-cancel').click();
-  await page.getByTestId('tab-review').click();
+  await openTab(page, 'review');
   await expect(page.getByTestId('pin-pad')).toBeVisible();
   expect(posted(calls, '/api/ack')).toHaveLength(1);
 });
@@ -374,13 +378,13 @@ test('ACK without the service shows the sentence and never crashes', async ({ pa
   await expect(page.getByTestId('screen-ack-pin')).toBeVisible();
   await page.getByTestId('pin-cancel').click();
   await expect(page.getByTestId('screen-today')).toBeVisible();
-  await expect(page.getByTestId('card-v-test-nguyen-1')).toHaveAttribute('data-ack-overdue', 'true');
+  await expect(page.getByTestId('row-j-test-nguyen')).toHaveClass(/ring/);
 });
 
 test('auto-return: STAGES goes back to TODAY after 60 s without a touch', async ({ page }) => {
   await page.clock.install();
   await openBoard(page, 'default');
-  await page.getByTestId('tab-stages').click();
+  await openTab(page, 'stages');
   await expect(page.getByTestId('screen-stages')).toBeVisible();
   await page.clock.fastForward(61_000);
   await expect(page.getByTestId('screen-today')).toBeVisible();
@@ -390,7 +394,7 @@ test('auto-return: STAGES goes back to TODAY after 60 s without a touch', async 
 test('auto-return: CANNOT INVOICE goes back to TODAY after 60 s without a touch', async ({ page }) => {
   await page.clock.install();
   await openBoard(page, 'default');
-  await page.getByTestId('tab-cannot-invoice').click();
+  await openTab(page, 'cannot-invoice');
   await expect(page.getByTestId('screen-cannot-invoice')).toBeVisible();
   await page.clock.fastForward(61_000);
   await expect(page.getByTestId('screen-today')).toBeVisible();
@@ -402,7 +406,7 @@ test.describe('the PIN session ends on every exit route', () => {
     await page.clock.install();
     await mockService(page);
     await openBoard(page, 'default');
-    await page.getByTestId('tab-review').click();
+    await openTab(page, 'review');
     await signIn(page, 'u-test-ashby');
     await expect(page.getByTestId('review-queue')).toBeVisible();
   });
@@ -410,20 +414,20 @@ test.describe('the PIN session ends on every exit route', () => {
   test('← TODAY', async ({ page }) => {
     await page.getByTestId('screen-review').getByRole('button', { name: 'back to today' }).click();
     await expect(page.getByTestId('screen-today')).toBeVisible();
-    await page.getByTestId('tab-review').click();
+    await openTab(page, 'review');
     await expect(page.getByTestId('pin-pad')).toBeVisible();
   });
 
   test('a tab to another screen', async ({ page }) => {
-    await page.getByTestId('tab-stages').click();
+    await openTab(page, 'stages');
     await expect(page.getByTestId('screen-stages')).toBeVisible();
-    await page.getByTestId('tab-review').click();
+    await openTab(page, 'review');
     await expect(page.getByTestId('pin-pad')).toBeVisible();
   });
 
   test('the TODAY tab', async ({ page }) => {
-    await page.getByTestId('tab-today').click();
-    await page.getByTestId('tab-scorecard').click();
+    await openTab(page, 'today');
+    await openTab(page, 'scorecard');
     await expect(page.getByTestId('pin-pad')).toBeVisible();
   });
 
@@ -435,7 +439,7 @@ test.describe('the PIN session ends on every exit route', () => {
   test('auto-return after 60 s idle', async ({ page }) => {
     await page.clock.fastForward(61_000);
     await expect(page.getByTestId('screen-today')).toBeVisible();
-    await page.getByTestId('tab-review').click();
+    await openTab(page, 'review');
     await expect(page.getByTestId('pin-pad')).toBeVisible();
   });
 
@@ -461,10 +465,10 @@ test('taps are posted to /api/tap on tab changes and zone taps', async ({ page }
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
   });
   await openBoard(page, 'default');
-  await page.getByTestId('tab-stages').click();
-  await page.getByTestId('tab-today').click();
-  await page.getByTestId('rail').click();
+  await openTab(page, 'stages');
+  await openTab(page, 'today');
+  await page.getByTestId('money').click();
   await expect.poll(() => taps.length).toBe(3);
   expect(taps[0]).toEqual({ screen: 'today', target: 'tab:stages' });
-  expect(taps[2]).toEqual({ screen: 'today', target: 'rail' });
+  expect(taps[2]).toEqual({ screen: 'today', target: 'money' });
 });

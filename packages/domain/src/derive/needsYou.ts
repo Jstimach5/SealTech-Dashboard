@@ -312,7 +312,7 @@ export function needsYou(s: Snapshot, now: Instant, measure: Measure = measureTe
   // (2) a return or re-test to book
   for (const l of lines) if (l.reason === 'RETURN NEEDED' || l.reason === 'BLOWER DOOR FAIL') add(moneyRow(ctx, l, 'today', 2));
   for (const v of s.visits) {
-    if (v.result !== 'Problem' || !v.ack) continue;
+    if (v.result !== 'Problem' || (!v.ack && !queuedAck.has(v.id))) continue;
     const job = ctx.jobs.get(v.jobId);
     if (!job || job.futureVisitCount > 0) continue;
     const at = v.resultAt ?? v.endAt;
@@ -323,7 +323,7 @@ export function needsYou(s: Snapshot, now: Instant, measure: Measure = measureTe
       icon: 'problem',
       status: 'Problem',
       statusTone: 'ink',
-      why: `ACK ${fmtTime(v.ack.at)}`,
+      why: v.ack ? `ACK ${fmtTime(v.ack.at)}` : 'ACK queued',
       age: ageDays(localDate(now) === localDate(at) ? 0 : days),
       ageTone: 'ink',
       owner: crewLeadInitialsFor(v, s.crews, s.people as Parameters<typeof crewLeadInitialsFor>[2]) ?? 'CREW',

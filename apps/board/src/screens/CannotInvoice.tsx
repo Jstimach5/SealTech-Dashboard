@@ -4,16 +4,60 @@
  * → POST /api/owner. FIX and HOLD lines keep their role word, so they offer no OWNER control.
  */
 import { useState } from 'react';
-import { STAGES, ownerText, type CannotInvoiceLine, type Stage } from '@sealtech/domain';
+import {
+  CONFIG,
+  REASON_LABEL,
+  STAGES,
+  actorInitials,
+  fmtLocalHHMM,
+  heroReconcile,
+  ownerText,
+  type CannotInvoiceLine,
+  type Reason,
+  type Stage,
+} from '@sealtech/domain';
 import { useBoard } from '../context';
 import { api, postTap } from '../data/api';
 import { dayMonth, splitLabel } from '../lib/format';
 import { BigNumber } from '../ui/BigNumber';
 import { Button } from '../ui/Button';
-import { DAYS_COLOUR, RED_ICON, lineTags } from '../zones/Rail';
+import { Tag } from '../ui/Tag';
 import { PinGate } from './PinGate';
 
-const PAGE = 8;
+const DAYS_COLOUR: Record<CannotInvoiceLine['colour'], string> = {
+  none: 'var(--ink)',
+  amber: 'var(--amber-text)',
+  red: 'var(--act)',
+  grey: 'var(--grey-text)',
+};
+
+/** Decision 27: red never stands alone. Red day counts carry ⚠; hard-red lines carry the words too. */
+const RED_ICON = '⚠';
+
+function lineTags(line: CannotInvoiceLine): JSX.Element[] {
+  const tags = line.tags.map((t) => <Tag key={t} text={t === 'NO-REMINDER' ? 'not in Requires invoicing' : t} tone={t === 'NO-REMINDER' ? 'muted' : 'amber'} keepCase />);
+  if (line.hardRed) tags.push(<Tag key="hard-red" text={`${RED_ICON} ${CONFIG.HARD_RED_DAYS}+ d unsubmitted`} tone="act" keepCase testId={`hard-red-${line.jobId}`} />);
+  return tags;
+}
+
+/** Revision G: the list is grouped by the next move, each group naming its actor and cut-off. */
+type Group = 'bill' | 'first' | 'second' | 'owner' | 'crews' | 'others' | 'program';
+const GROUP_OF: Record<Reason, Group> = {
+  'READY TO INVOICE': 'bill',
+  'AWAITING 1ST REVIEW': 'first',
+  'AWAITING 2ND REVIEW': 'second',
+  HOLD: 'owner',
+  'FIX OPEN': 'crews',
+  'RETURN NEEDED': 'crews',
+  'BLOWER DOOR FAIL': 'crews',
+  'FORM/QUANTITIES MISSING': 'crews',
+  'INSPECTION/PERMIT': 'others',
+  'PROGRAM-WAIT': 'program',
+};
+const GROUP_ORDER: Group[] = ['bill', 'first', 'second', 'owner', 'crews', 'others', 'program'];
+
+/** Six rows a page leaves room for the group heads and the reconciliation line. */
+const PAGE = 6;
 /** Decision 31's stage words as printed on the wall. */
 const STAGE_WORD: Record<Stage, string> = { completed: 'done', first_review: '1st', second_review: '2nd', submitted: 'submitted', accepted: 'accepted' };
 const OFFICE_ROLES: ReadonlySet<string> = new Set(['office', 'owner']);
@@ -32,7 +76,18 @@ export function CannotInvoice() {
   const [ownerFor, setOwnerFor] = useState<string | undefined>(undefined);
   const [notes, setNotes] = useState<Record<string, Note>>({});
   const [busy, setBusy] = useState(false);
-  const lines = snapshot.cannotInvoice;
+  const order = (l: CannotInvoiceLine) => GROUP_ORDER.indexOf(GROUP_OF[l.reason]);
+  const lines = [...snapshot.cannotInvoice].sort((a, b) => order(a) - order(b) || b.stageDays - a.stageDays || a.label.localeCompare(b.label));
+  const office = snapshot.people.find((x) => x.role === 'office')?.initials ?? 'Office';
+  const groupHead: Record<Group, string> = {
+    bill: `Bill today · ${office}`,
+    first: `1st pass · ${actorInitials(1, snapshot.people) ?? 'Office'} by ${fmtLocalHHMM(snapshot.boardDate, CONFIG.VERDICT_CUTOFF_PASS1)}`,
+    second: `2nd pass · ${actorInitials(2, snapshot.people) ?? 'Office'} by ${fmtLocalHHMM(snapshot.boardDate, CONFIG.VERDICT_CUTOFF_PASS2, true)}`,
+    owner: 'Owner decides',
+    crews: 'With crews',
+    others: 'Waiting on others',
+    program: 'With CLEAResult',
+  };
   const pages = Math.max(1, Math.ceil(lines.length / PAGE));
   const p = Math.min(page, pages - 1);
   const slice = lines.slice(p * PAGE, p * PAGE + PAGE);
@@ -66,7 +121,7 @@ export function CannotInvoice() {
         <div className="cannot__hero">
           <BigNumber value={h.cannotInvoice} tier="b" tone="brand" testId="cannot-hero" />
           <div className="cannot__hero-words">
-            <span className="tier-d caps bold brand">Cannot invoice</span>
+            <span className="tier-d bold brand">Cannot invoice · Jobber's Requires invoicing count</span>
             <span className="tier-d muted">
               oldest <b>{h.oldestDays} d</b> · median <b>{h.medianDays} d</b> · not yet ready <b>{h.visitsNotReady}</b> · 1st <b>{h.reviewQueue.pass1}</b> · 2nd <b>{h.reviewQueue.pass2}</b> · FIX{' '}
               <b>{h.reviewQueue.fix}</b> · HOLD <b>{h.reviewQueue.hold}</b>
@@ -92,7 +147,16 @@ export function CannotInvoice() {
         <OwnerPicker line={picking} busy={busy} onPick={(initials) => void pickOwner(picking, initials)} onCancel={closePick} />
       ) : (
         <div className="cannot__rows">
-          {slice.map((line) => (
+          <p className="tier-d muted cannot__reconcile" data-testid="cannot-reconcile">
+            {heroReconcile(snapshot)}
+          </p>
+          {slice.map((line, i) => (
+            <div key={line.jobId} className="cannot__item">
+              {(i === 0 || GROUP_OF[slice[i - 1]!.reason] !== GROUP_OF[line.reason]) && (
+                <h3 className="tier-d bold cannot__group" data-testid={`cannot-group-${GROUP_OF[line.reason]}`}>
+                  {groupHead[GROUP_OF[line.reason]]}
+                </h3>
+              )}
             <CannotRow
               key={line.jobId}
               line={line}
@@ -106,6 +170,7 @@ export function CannotInvoice() {
                 setOwnerFor(line.jobId);
               }}
             />
+            </div>
           ))}
         </div>
       )}
@@ -155,7 +220,7 @@ function CannotRow({ line, note, onOwner }: { line: CannotInvoiceLine; note: Not
                 {RED_ICON}
               </span>
             )}
-            {line.daysSinceCompleted} d
+            {line.stageDays} d
           </b>
           <span className="muted">·</span>
           <b>{lastName}</b>
@@ -172,7 +237,7 @@ function CannotRow({ line, note, onOwner }: { line: CannotInvoiceLine; note: Not
             </>
           )}
           <span className="muted">·</span>
-          <span className={`cannot-row__reason ${wait ? 'muted' : ''}`}>{line.reason}</span>
+          <span className={`cannot-row__reason ${wait ? 'muted' : ''}`}>{REASON_LABEL[line.reason]}</span>
           {line.fixPick && <span className="tier-d muted cannot-row__fix">{line.fixPick}</span>}
           <span className="muted">·</span>
           <span data-testid={`cannot-owner-${line.jobId}`}>{ownerText(line.owner)}</span>
