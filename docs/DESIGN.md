@@ -4,8 +4,8 @@ Read before writing any template, CSS, or email HTML. This is a working tool for
 (Jack), read on a phone over Tailscale at 6:30 AM and on a desktop later. Goal: find the visits that
 need attention in under 10 seconds and trust what each finding says. Not a marketing site.
 
-Format follows the DESIGN.md convention (tokens + rules an agent can apply). Brand colors are
-placeholders until Jack supplies SealTech's — see "Open".
+Format follows the DESIGN.md convention (tokens + rules an agent can apply). Colors and font come
+from SealTech's SOP guide house style, so the dashboard, email, and staff guides look like one company.
 
 ## Hard rules (these come from CLAUDE.md, not taste)
 1. **Fact vs. suspicion look different.** `missing_document`, `note_flag`, `coverage_gap` = facts:
@@ -26,18 +26,23 @@ Plain CSS custom properties in `web/static/app.css`. No Tailwind, no build step.
 ```css
 :root {
   color-scheme: light dark;
-  /* surfaces */
-  --bg: #f6f7f8;  --surface: #ffffff;  --surface-2: #eef0f2;
-  --ink: #14171a; --ink-2: #4a5159;    --line: #d6dadf;
-  --accent: #1f5fae;          /* PLACEHOLDER — replace with SealTech brand */
-  /* severity: each passes 4.5:1 for text on --surface */
-  --critical: #b3261e; --critical-bg: #fdecea;
-  --high:     #a24a00; --high-bg:     #fff1e3;
-  --normal:   #3d5a80; --normal-bg:   #eaf0f7;
-  --ok:       #1e6b3a; --ok-bg:       #e7f4ec;   /* "No detected issues" only */
+  /* SealTech house style (from the annotated-sop-guide skill). Same color jobs as the SOP guides:
+     red = act now, amber = exception, blue = information, green = automatic / nothing found. */
+  --brand: #0f3d2e;           /* header band, page titles, primary buttons */
+  --brand-ink: #ffffff;       /* text on --brand */
+  --brand-kicker: #9fd3b8;    /* secondary text on --brand */
+  /* surfaces, neutrals tinted toward the brand green */
+  --bg: #f5f7f6;  --surface: #ffffff;  --surface-2: #eaf0ed;
+  --ink: #14201b; --ink-2: #4d5a54;    --line: #d5ddd9;
+  /* severity: text color / tint / bar. Text passes 4.5:1 on its tint and on --surface.
+     #e5322d and #d98b00 are bar/fill colors only; as text they fail contrast. */
+  --critical: #b91c1c; --critical-bg: #fff5f5; --critical-bar: #e5322d;
+  --high:     #a24a00; --high-bg:     #fff7e6; --high-bar:     #d98b00;
+  --normal:   #1f5ce6; --normal-bg:   #f2f6ff; --normal-bar:   #1f5ce6;
+  --ok:       #15803d; --ok-bg:       #f0fdf4;   /* "No detected issues" only */
   --unknown:  #5b5f66; --unknown-bg:  #eceef0;   /* "Not fully evaluated" */
-  /* type */
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* type: Inter self-hosted from web/static/fonts (no network fetch), system fallback */
+  --font: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "Cascadia Mono", Consolas, monospace; /* IDs only */
   --fs-1: 0.8125rem; --fs-2: 0.9375rem; --fs-3: 1.0625rem; --fs-4: 1.375rem; --fs-5: 2rem;
   /* space (4px base) */
@@ -46,17 +51,18 @@ Plain CSS custom properties in `web/static/app.css`. No Tailwind, no build step.
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1113; --surface: #171a1d; --surface-2: #1f2327;
-    --ink: #e8eaed; --ink-2: #a3a9b1; --line: #2c3136;
-    --critical: #ff8a80; --critical-bg: #3a1513;
-    --high: #ffb066;     --high-bg: #3a2410;
-    --normal: #9cbbe0;   --normal-bg: #1a2635;
-    --ok: #7fd19b;       --ok-bg: #12291b;
+    --brand: #0f3d2e; --brand-ink: #ffffff; --brand-kicker: #9fd3b8;
+    --bg: #0e1714; --surface: #141e1a; --surface-2: #1b2823;
+    --ink: #e6ece9; --ink-2: #a7b5ae; --line: #2a3832;
+    --critical: #ff8a80; --critical-bg: #2a1414; --critical-bar: #e5322d;
+    --high: #ffb84d;     --high-bg: #2b2010;     --high-bar: #d98b00;
+    --normal: #8fb0ff;   --normal-bg: #141b2e;   --normal-bar: #1f5ce6;
+    --ok: #6fd49a;       --ok-bg: #10241a;
     --unknown: #b0b4ba;  --unknown-bg: #24272b;
   }
 }
 ```
-System fonts only: zero network fetches, fast on LTE, renders identically in the email.
+Inter matches the SOP guides. Self-host the font files so the dashboard makes zero network fetches. The email uses the system stack (clients won't load it).
 
 ## Type
 - Body `--fs-3` (17px) on phone, 16px desktop. Line-height 1.45. Max line 75ch.
@@ -65,6 +71,10 @@ System fonts only: zero network fetches, fast on LTE, renders identically in the
 - Sentence case everywhere. No all-caps letter-spaced labels.
 
 ## Layout
+- **Answer first.** Every screen opens with one sentence that answers "do I need to do anything?"
+  (e.g. "2 visits need you today. 1 critical."), then the counts, then the list. Detail is one tap
+  away, never on the first screen. Same order in the email.
+- **Rows, not cards.** Lists are dense rows with a severity bar, scannable top to bottom.
 - **Phone first** (390px). Single column, 16px gutters. Desktop (≥1024px) adds a filter sidebar and
   a two-column visit page (findings left, evidence right). No horizontal scroll at any width.
 - **Home:** six count tiles in the REQUIREMENTS §11 order, each a real `<a>` to the filtered list.
@@ -81,9 +91,9 @@ System fonts only: zero network fetches, fast on LTE, renders identically in the
   (optional) and never needs a second screen.
 
 ## Components
-- **Badge:** fact = filled `--{sev}-bg` + `--{sev}` text; suspicion = transparent bg, 1px dashed
+- **Badge:** fact = filled `--{sev}-bg` + `--{sev}` text, with a `--{sev}-bar` left edge; suspicion = transparent bg, 1px dashed
   `--{sev}` border, text prefixed "Possible".
-- **Finding card:** 4px left bar (solid fact / dashed suspicion) in severity color, title, one-line
+- **Finding card:** 4px left bar (solid fact / dashed suspicion) in `--{sev}-bar`, title, one-line
   evidence summary, thumbnails (`width`/`height` set, `loading="lazy"`), metadata line in `--fs-1`.
 - **Thumbnail:** 96×96 phone, 128×128 desktop, `object-fit: cover`, opens the CompanyCam photo.
 - **Tables** (review queue, labeling): real `<table>`, sticky header, row lines allowed.
@@ -108,4 +118,4 @@ findings fixed or justified; (2) `python tools/ui_snap.py <url>` exits 0 and its
 (3) the hard rules above checked by a test where possible (e.g. no "confirmed" in rendered HTML).
 
 ## Open (needs Jack)
-- SealTech brand color(s) and logo. Until then `--accent` is a neutral blue placeholder.
+- SealTech logo file (SVG preferred) for the header band.
