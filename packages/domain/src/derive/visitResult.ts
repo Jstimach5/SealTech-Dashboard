@@ -118,13 +118,19 @@ export function resolveVisitResult(args: {
 // ---------------------------------------------------------------------------------------------
 // Planned as prep (decision 46)
 
-const PR_DAY_RE = /PR:\s*day\s*\d+\s*of\s*\d+/i;
+const PR_DAY_RE = /PR:\s*day\s*(\d+)\s*of\s*(\d+)/i;
 const PREP_WORD_RE = /\bprep\b/i;
 
-/** Decision 46: instructions name a prep day as `PR: day n of m` or the whole word "prep" ("Prepare" and "Prepped" do not count). */
+/**
+ * Decision 46: instructions name a prep day as `PR: day n of m` with n < m (the last day of a
+ * multi-day job is the finishing day, not a prep), or the whole word "prep" ("Prepare" and
+ * "Prepped" do not count).
+ */
 export function instructionsSayPrep(instructions: string | undefined): boolean {
   if (instructions === undefined) return false;
-  return PR_DAY_RE.test(instructions) || PREP_WORD_RE.test(instructions);
+  const m = PR_DAY_RE.exec(instructions);
+  if (m) return Number(m[1]) < Number(m[2]);
+  return PREP_WORD_RE.test(instructions);
 }
 
 /** Decision 46: another visit on the same job that starts later and already existed when this one started. */

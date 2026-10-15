@@ -6,6 +6,6 @@
     "lib": ["ES2022"],
     "noEmit": false
   },
-  "include": ["*.ts", "src/**/*.ts"],
+  "include": ["*.ts", "testville/**/*.ts"],
   "references": [{ "path": "../packages/domain" }]
 }

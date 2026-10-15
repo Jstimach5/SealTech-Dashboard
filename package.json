@@ -5,7 +5,8 @@
   "description": "SealTech office production board: a derived, read-mostly wall board fed from Jobber and two existing Google Sheets.",
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "fixtures"
   ],
   "engines": {
     "node": ">=22.13"
@@ -16,7 +17,7 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "build": "npm run build -w packages/domain && npm run build -w apps/board && npm run build -w apps/service",
-    "fixtures": "npm run build:snapshot -w fixtures",
+    "fixtures": "npm run build:snapshot -w @sealtech/fixtures",
     "demo": "npm run demo -w apps/board",
     "dev": "npm run dev -w apps/board",
     "service": "npm run dev -w apps/service",

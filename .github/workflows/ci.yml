@@ -19,6 +19,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run fixtures
+      - name: Committed fixture snapshots match the dataset
+        run: git diff --exit-code -- fixtures/snapshot.json fixtures/snapshots
       - run: npm run build -w packages/domain && npm run build -w apps/board
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium

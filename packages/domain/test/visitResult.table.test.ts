@@ -302,6 +302,16 @@ describe('plannedAsPrep (decision 46)', () => {
       expected: true,
     },
     {
+      name: "instructions 'PR: day 2 of 2' → false (the last day finishes the job; it is not a prep)",
+      input: { visit: day1({ isLastScheduledVisit: true, instructions: 'PR: day 2 of 2' }), jobVisits: [] },
+      expected: false,
+    },
+    {
+      name: "instructions 'PR: day 2 of 3' → true",
+      input: { visit: day1({ isLastScheduledVisit: true, instructions: 'PR: day 2 of 3' }), jobVisits: [] },
+      expected: true,
+    },
+    {
       name: "instructions 'prep day' → true",
       input: { visit: day1({ isLastScheduledVisit: true, instructions: 'prep day' }), jobVisits: [] },
       expected: true,
