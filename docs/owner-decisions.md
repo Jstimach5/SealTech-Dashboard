@@ -55,3 +55,7 @@ These 48 answers are the contract for the board. Nothing in the code re-opens th
 46. **Prepped** counts as plan kept only when the visit was planned as a prep day; otherwise it is a miss with a reason code.
 47. **Launch**: the prototype runs on a laptop at the 7:00 huddle for two weeks (fictional jobs, then live read-only Jobber as soon as the service runs). Mount the panel when the habit holds. No paper phase.
 48. **Phase-2 feed modelled now**: CompanyCam photo counts + last capture per visit (fix the account time zone first). Not selected for now: live clock-ins on the card, Vault dates on the board (they still go in the sheet per 30), a GHL Sales tab.
+
+## Round 3 — build review (Oct 15)
+
+49. **Auto-return**: every screen other than TODAY (STAGES, CANNOT INVOICE, REVIEW, SCORECARD) returns to TODAY after 60 s without a touch. Leaving REVIEW or SCORECARD by any route also ends the PIN session.

@@ -387,6 +387,16 @@ test('auto-return: STAGES goes back to TODAY after 60 s without a touch', async 
   await expect(page.getByTestId('screen-stages')).toHaveCount(0);
 });
 
+test('auto-return: CANNOT INVOICE goes back to TODAY after 60 s without a touch', async ({ page }) => {
+  await page.clock.install();
+  await openBoard(page, 'default');
+  await page.getByTestId('tab-cannot-invoice').click();
+  await expect(page.getByTestId('screen-cannot-invoice')).toBeVisible();
+  await page.clock.fastForward(61_000);
+  await expect(page.getByTestId('screen-today')).toBeVisible();
+  await expect(page.getByTestId('screen-cannot-invoice')).toHaveCount(0);
+});
+
 test.describe('the PIN session ends on every exit route', () => {
   test.beforeEach(async ({ page }) => {
     await page.clock.install();

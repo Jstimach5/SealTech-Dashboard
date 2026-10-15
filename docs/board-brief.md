@@ -22,7 +22,7 @@ Every tracker SealTech typed into this year died within weeks (Notion Jobs, Inte
 | Counts strip | Jobber's seven bucket counts in Jobber's words, plus UNANSWERED | job buckets, answered rule | 96 px |
 | Footer | four source freshness dots, responder, board owner, build, queued writes, DPR warning | service status | 32 px |
 
-Other screens: STAGES (seven Jobber columns, WIP cap, hard-red filter), CANNOT INVOICE (the full list with stage clocks), REVIEW 🔒 (PIN, READY / FIX / HOLD, unmatched rows, FLAG, focus, responder), SCORECARD 🔒 (seven numbers by week, per-crew first pass; the only place crew-level numbers exist). RECAP arrives with Jobber note writes (milestone M10).
+Other screens: STAGES (seven Jobber columns, WIP cap, hard-red filter), CANNOT INVOICE (the full list with stage clocks), REVIEW 🔒 (PIN, READY / FIX / HOLD, unmatched rows, FLAG, focus, responder), SCORECARD 🔒 (seven numbers by week, per-crew first pass; the only place crew-level numbers exist). RECAP arrives with Jobber note writes (milestone M10). Every screen other than TODAY returns to TODAY after 60 s without a touch; REVIEW and SCORECARD also end the PIN session (decision 49).
 
 ## Formatting rules
 
